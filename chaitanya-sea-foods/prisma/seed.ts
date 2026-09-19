@@ -20,27 +20,31 @@ async function main() {
   });
 
   try {
+    // =========================
+    // ADMIN
+    // =========================
+
     const adminPasswordHash = await bcrypt.hash(
-      "ChangeMe123!",
+      "ashish404",
       12
     );
 
     const admin = await prisma.user.upsert({
       where: {
-        username: "admin",
+        username: "admin_ashish",
       },
 
       update: {
         passwordHash: adminPasswordHash,
-        name: "Chaitanya Admin",
+        name: "Admin - Ashish",
         role: "ADMIN",
         isActive: true,
       },
 
       create: {
-        username: "admin",
+        username: "admin_ashish",
         passwordHash: adminPasswordHash,
-        name: "Chaitanya Admin",
+        name: "Admin - Ashish",
         role: "ADMIN",
         isActive: true,
       },
@@ -48,8 +52,44 @@ async function main() {
 
     console.log(`Admin created: ${admin.username}`);
 
+    // =========================
+    // MANAGER
+    // =========================
+
+    const managerPasswordHash = await bcrypt.hash(
+      "manager@123",
+      12
+    );
+
+    const manager = await prisma.user.upsert({
+      where: {
+        username: "manager",
+      },
+
+      update: {
+        passwordHash: managerPasswordHash,
+        name: "Sea Foods Manager",
+        role: "MANAGER",
+        isActive: true,
+      },
+
+      create: {
+        username: "manager",
+        passwordHash: managerPasswordHash,
+        name: "Sea Foods Manager",
+        role: "MANAGER",
+        isActive: true,
+      },
+    });
+
+    console.log(`Manager created: ${manager.username}`);
+
+    // =========================
+    // VIEWER
+    // =========================
+
     const viewerPasswordHash = await bcrypt.hash(
-      "Viewer123!",
+      "viewer@123",
       12
     );
 
