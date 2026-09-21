@@ -7,7 +7,7 @@ type Role = "ADMIN" | "MANAGER" | "VIEWER";
 
 type Tub = {
   id: string;
-  number: string;
+  number: number;
   weight: number;
 };
 
@@ -44,7 +44,7 @@ const GRADE_OPTIONS = [
 const initialVendors: Vendor[] = [
   {
     id: "vendor-a",
-    name: "Vendor A",
+    name: "A",
     products: [
       {
         id: "a-prawns",
@@ -53,19 +53,29 @@ const initialVendors: Vendor[] = [
         countPerKg: "40",
         tubs: [
           {
+            id: "a-prawns-t0",
+            number: 0,
+            weight: 12,
+          },
+          {
             id: "a-prawns-t1",
-            number: "TN01",
-            weight: 18,
+            number: 1,
+            weight: 15,
           },
           {
             id: "a-prawns-t2",
-            number: "TN02",
-            weight: 20,
+            number: 2,
+            weight: 18,
           },
           {
             id: "a-prawns-t3",
-            number: "TN03",
-            weight: 17,
+            number: 3,
+            weight: 16,
+          },
+          {
+            id: "a-prawns-t4",
+            number: 4,
+            weight: 20,
           },
         ],
       },
@@ -76,23 +86,22 @@ const initialVendors: Vendor[] = [
         countPerKg: "12",
         tubs: [
           {
-            id: "a-fish-t1",
-            number: "TN01",
-            weight: 25,
+            id: "a-fish-t0",
+            number: 0,
+            weight: 20,
           },
           {
-            id: "a-fish-t2",
-            number: "TN02",
-            weight: 21,
+            id: "a-fish-t1",
+            number: 1,
+            weight: 18,
           },
         ],
       },
     ],
   },
-
   {
     id: "vendor-b",
-    name: "Vendor B",
+    name: "B",
     products: [
       {
         id: "b-crab",
@@ -101,13 +110,13 @@ const initialVendors: Vendor[] = [
         countPerKg: "8",
         tubs: [
           {
-            id: "b-crab-t1",
-            number: "TN01",
+            id: "b-crab-t0",
+            number: 0,
             weight: 16,
           },
           {
-            id: "b-crab-t2",
-            number: "TN02",
+            id: "b-crab-t1",
+            number: 1,
             weight: 19,
           },
         ],
@@ -119,23 +128,22 @@ const initialVendors: Vendor[] = [
         countPerKg: "35",
         tubs: [
           {
-            id: "b-prawns-t1",
-            number: "TN01",
+            id: "b-prawns-t0",
+            number: 0,
             weight: 22,
           },
           {
-            id: "b-prawns-t2",
-            number: "TN02",
+            id: "b-prawns-t1",
+            number: 1,
             weight: 18,
           },
         ],
       },
     ],
   },
-
   {
     id: "vendor-c",
-    name: "Vendor C",
+    name: "C",
     products: [
       {
         id: "c-fish",
@@ -144,23 +152,22 @@ const initialVendors: Vendor[] = [
         countPerKg: "15",
         tubs: [
           {
-            id: "c-fish-t1",
-            number: "TN01",
+            id: "c-fish-t0",
+            number: 0,
             weight: 24,
           },
           {
-            id: "c-fish-t2",
-            number: "TN02",
+            id: "c-fish-t1",
+            number: 1,
             weight: 20,
           },
         ],
       },
     ],
   },
-
   {
     id: "vendor-d",
-    name: "Vendor D",
+    name: "D",
     products: [
       {
         id: "d-prawns",
@@ -169,13 +176,13 @@ const initialVendors: Vendor[] = [
         countPerKg: "50",
         tubs: [
           {
-            id: "d-prawns-t1",
-            number: "TN01",
+            id: "d-prawns-t0",
+            number: 0,
             weight: 15,
           },
           {
-            id: "d-prawns-t2",
-            number: "TN02",
+            id: "d-prawns-t1",
+            number: 1,
             weight: 14,
           },
         ],
@@ -191,203 +198,350 @@ export default function DashboardShell({
 }: DashboardShellProps) {
   const router = useRouter();
 
-  const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
+  const [vendors, setVendors] =
+    useState<Vendor[]>(initialVendors);
 
-  const [selectedVendorId, setSelectedVendorId] = useState(
-    initialVendors[0]?.id ?? "",
-  );
+  const [selectedVendorId, setSelectedVendorId] =
+    useState(initialVendors[0]?.id ?? "");
 
-  const [selectedProductId, setSelectedProductId] = useState(
-    initialVendors[0]?.products[0]?.id ?? "",
-  );
+  const [selectedProductId, setSelectedProductId] =
+    useState(
+      initialVendors[0]?.products[0]?.id ?? "",
+    );
 
-  const [manualNetWeight, setManualNetWeight] = useState(false);
-  const [netWeightOverride, setNetWeightOverride] = useState("");
+  const [tubWeight, setTubWeight] =
+    useState("");
 
-  const [tubNumber, setTubNumber] = useState("");
-  const [tubWeight, setTubWeight] = useState("");
+  const [manualNetWeight, setManualNetWeight] =
+    useState(false);
 
-  const [purchaseCompleted, setPurchaseCompleted] = useState(false);
+  const [netWeightOverride, setNetWeightOverride] =
+    useState("");
 
-  const [completedVendors, setCompletedVendors] = useState<string[]>([]);
+  const [purchaseCompleted, setPurchaseCompleted] =
+    useState(false);
 
-  const [showMenu, setShowMenu] = useState(false);
+  const [completedVendors, setCompletedVendors] =
+    useState<string[]>([]);
 
-  const canCreate = role === "ADMIN" || role === "MANAGER";
-  const canOverrideNetWeight = role === "ADMIN";
+  const [showMenu, setShowMenu] =
+    useState(false);
+
+  const [isNavigatingToUsers, setIsNavigatingToUsers] =
+    useState(false);
+
+  const canCreate =
+    role === "ADMIN" ||
+    role === "MANAGER";
+
+  const canOverrideNetWeight =
+    role === "ADMIN";
 
   const selectedVendor = useMemo(
-    () => vendors.find((vendor) => vendor.id === selectedVendorId),
+    () =>
+      vendors.find(
+        (vendor) =>
+          vendor.id === selectedVendorId,
+      ),
     [vendors, selectedVendorId],
   );
 
   const selectedProduct = useMemo(
     () =>
       selectedVendor?.products.find(
-        (product) => product.id === selectedProductId,
+        (product) =>
+          product.id === selectedProductId,
       ),
     [selectedVendor, selectedProductId],
   );
 
-  const currentTubs = selectedProduct?.tubs ?? [];
+  const currentTubs =
+    selectedProduct?.tubs ?? [];
 
-  const selectedVendorCompleted = selectedVendor
-    ? completedVendors.includes(selectedVendor.id)
-    : false;
+  const selectedVendorCompleted =
+    selectedVendor
+      ? completedVendors.includes(
+          selectedVendor.id,
+        )
+      : false;
 
-  const workspaceFrozen = purchaseCompleted || selectedVendorCompleted;
+  const workspaceFrozen =
+    purchaseCompleted ||
+    selectedVendorCompleted;
 
-  const totalWeight = currentTubs.reduce(
-    (total, tub) => total + tub.weight,
-    0,
-  );
+  const totalWeight =
+    currentTubs.reduce(
+      (total, tub) =>
+        total + tub.weight,
+      0,
+    );
 
-  const calculatedNetWeight = totalWeight * 0.95;
+  const calculatedNetWeight =
+    totalWeight * 0.95;
 
-  const netWeight = manualNetWeight
-    ? Number(netWeightOverride || 0)
-    : calculatedNetWeight;
+  const netWeight =
+    manualNetWeight
+      ? Number(
+          netWeightOverride || 0,
+        )
+      : calculatedNetWeight;
 
-  function selectVendor(vendorId: string) {
-    if (purchaseCompleted) return;
+  const nextTubNumber = useMemo(() => {
+    if (currentTubs.length === 0) {
+      return 0;
+    }
 
-    const vendor = vendors.find((item) => item.id === vendorId);
+    return (
+      Math.max(
+        ...currentTubs.map(
+          (tub) => tub.number,
+        ),
+      ) + 1
+    );
+  }, [currentTubs]);
 
-    if (!vendor) return;
+  function selectVendor(
+    vendorId: string,
+  ) {
+    if (purchaseCompleted) {
+      return;
+    }
+
+    const vendor =
+      vendors.find(
+        (item) =>
+          item.id === vendorId,
+      );
+
+    if (!vendor) {
+      return;
+    }
 
     setSelectedVendorId(vendorId);
 
-    const firstProduct = vendor.products[0];
-
-    setSelectedProductId(firstProduct?.id ?? "");
+    setSelectedProductId(
+      vendor.products[0]?.id ?? "",
+    );
 
     setManualNetWeight(false);
     setNetWeightOverride("");
   }
 
-  function cancelVendor(vendorId: string) {
-    if (purchaseCompleted) return;
+  function cancelVendor(
+    vendorId: string,
+  ) {
+    if (purchaseCompleted) {
+      return;
+    }
 
-    const remainingVendors = vendors.filter(
-      (vendor) => vendor.id !== vendorId,
-    );
+    const remainingVendors =
+      vendors.filter(
+        (vendor) =>
+          vendor.id !== vendorId,
+      );
 
-    if (remainingVendors.length === 0) return;
+    if (
+      remainingVendors.length === 0
+    ) {
+      return;
+    }
 
     setVendors(remainingVendors);
 
-    if (selectedVendorId === vendorId) {
-      const nextVendor = remainingVendors[0];
+    if (
+      selectedVendorId ===
+      vendorId
+    ) {
+      const nextVendor =
+        remainingVendors[0];
 
-      setSelectedVendorId(nextVendor.id);
-      setSelectedProductId(nextVendor.products[0]?.id ?? "");
-      setManualNetWeight(false);
-      setNetWeightOverride("");
+      setSelectedVendorId(
+        nextVendor.id,
+      );
+
+      setSelectedProductId(
+        nextVendor.products[0]?.id ??
+          "",
+      );
     }
 
-    setCompletedVendors((current) =>
-      current.filter((id) => id !== vendorId),
+    setCompletedVendors(
+      (current) =>
+        current.filter(
+          (id) =>
+            id !== vendorId,
+        ),
     );
   }
 
-  function selectProduct(productId: string) {
-    if (workspaceFrozen) return;
+  function selectProduct(
+    productId: string,
+  ) {
+    if (workspaceFrozen) {
+      return;
+    }
 
-    setSelectedProductId(productId);
+    setSelectedProductId(
+      productId,
+    );
+
     setManualNetWeight(false);
     setNetWeightOverride("");
   }
 
-  function cancelProduct(productId: string) {
-    if (!selectedVendor || workspaceFrozen) return;
+  function cancelProduct(
+    productId: string,
+  ) {
+    if (
+      !selectedVendor ||
+      workspaceFrozen
+    ) {
+      return;
+    }
 
-    const remainingProducts = selectedVendor.products.filter(
-      (product) => product.id !== productId,
+    const remainingProducts =
+      selectedVendor.products.filter(
+        (product) =>
+          product.id !== productId,
+      );
+
+    if (
+      remainingProducts.length ===
+      0
+    ) {
+      return;
+    }
+
+    setVendors(
+      (current) =>
+        current.map(
+          (vendor) =>
+            vendor.id ===
+            selectedVendor.id
+              ? {
+                  ...vendor,
+                  products:
+                    remainingProducts,
+                }
+              : vendor,
+        ),
     );
 
-    if (remainingProducts.length === 0) return;
-
-    setVendors((current) =>
-      current.map((vendor) =>
-        vendor.id === selectedVendor.id
-          ? {
-              ...vendor,
-              products: remainingProducts,
-            }
-          : vendor,
-      ),
-    );
-
-    if (selectedProductId === productId) {
-      setSelectedProductId(remainingProducts[0].id);
-      setManualNetWeight(false);
-      setNetWeightOverride("");
+    if (
+      selectedProductId ===
+      productId
+    ) {
+      setSelectedProductId(
+        remainingProducts[0].id,
+      );
     }
   }
 
-  function updateProductName(name: string) {
-    if (!selectedVendor || !selectedProduct || workspaceFrozen) return;
+  function updateProductName(
+    name: string,
+  ) {
+    if (
+      !selectedVendor ||
+      !selectedProduct ||
+      workspaceFrozen
+    ) {
+      return;
+    }
 
-    setVendors((current) =>
-      current.map((vendor) =>
-        vendor.id === selectedVendor.id
-          ? {
-              ...vendor,
-              products: vendor.products.map((product) =>
-                product.id === selectedProduct.id
-                  ? {
-                      ...product,
-                      name,
-                    }
-                  : product,
-              ),
-            }
-          : vendor,
-      ),
+    setVendors(
+      (current) =>
+        current.map(
+          (vendor) =>
+            vendor.id ===
+            selectedVendor.id
+              ? {
+                  ...vendor,
+                  products:
+                    vendor.products.map(
+                      (product) =>
+                        product.id ===
+                        selectedProduct.id
+                          ? {
+                              ...product,
+                              name,
+                            }
+                          : product,
+                    ),
+                }
+              : vendor,
+        ),
     );
   }
 
-  function updateGrade(grade: string) {
-    if (!selectedVendor || !selectedProduct || workspaceFrozen) return;
+  function updateGrade(
+    grade: string,
+  ) {
+    if (
+      !selectedVendor ||
+      !selectedProduct ||
+      workspaceFrozen
+    ) {
+      return;
+    }
 
-    setVendors((current) =>
-      current.map((vendor) =>
-        vendor.id === selectedVendor.id
-          ? {
-              ...vendor,
-              products: vendor.products.map((product) =>
-                product.id === selectedProduct.id
-                  ? {
-                      ...product,
-                      grade,
-                    }
-                  : product,
-              ),
-            }
-          : vendor,
-      ),
+    setVendors(
+      (current) =>
+        current.map(
+          (vendor) =>
+            vendor.id ===
+            selectedVendor.id
+              ? {
+                  ...vendor,
+                  products:
+                    vendor.products.map(
+                      (product) =>
+                        product.id ===
+                        selectedProduct.id
+                          ? {
+                              ...product,
+                              grade,
+                            }
+                          : product,
+                    ),
+                }
+              : vendor,
+        ),
     );
   }
 
-  function updateCountPerKg(countPerKg: string) {
-    if (!selectedVendor || !selectedProduct || workspaceFrozen) return;
+  function updateCountPerKg(
+    countPerKg: string,
+  ) {
+    if (
+      !selectedVendor ||
+      !selectedProduct ||
+      workspaceFrozen
+    ) {
+      return;
+    }
 
-    setVendors((current) =>
-      current.map((vendor) =>
-        vendor.id === selectedVendor.id
-          ? {
-              ...vendor,
-              products: vendor.products.map((product) =>
-                product.id === selectedProduct.id
-                  ? {
-                      ...product,
-                      countPerKg,
-                    }
-                  : product,
-              ),
-            }
-          : vendor,
-      ),
+    setVendors(
+      (current) =>
+        current.map(
+          (vendor) =>
+            vendor.id ===
+            selectedVendor.id
+              ? {
+                  ...vendor,
+                  products:
+                    vendor.products.map(
+                      (product) =>
+                        product.id ===
+                        selectedProduct.id
+                          ? {
+                              ...product,
+                              countPerKg,
+                            }
+                          : product,
+                    ),
+                }
+              : vendor,
+        ),
     );
   }
 
@@ -395,74 +549,106 @@ export default function DashboardShell({
     if (
       !selectedVendor ||
       !selectedProduct ||
-      workspaceFrozen ||
-      !tubNumber.trim() ||
-      !tubWeight
+      workspaceFrozen
     ) {
       return;
     }
 
-    const weight = Number(tubWeight);
+    const weight =
+      Number(tubWeight);
 
-    if (!Number.isFinite(weight) || weight <= 0) return;
+    if (
+      !Number.isFinite(weight) ||
+      weight <= 0
+    ) {
+      return;
+    }
 
     const newTub: Tub = {
-      id: `${selectedProduct.id}-${Date.now()}`,
-      number: tubNumber.trim(),
+      id: `${selectedProduct.id}-tub-${Date.now()}`,
+      number: nextTubNumber,
       weight,
     };
 
-    setVendors((current) =>
-      current.map((vendor) =>
-        vendor.id === selectedVendor.id
-          ? {
-              ...vendor,
-              products: vendor.products.map((product) =>
-                product.id === selectedProduct.id
-                  ? {
-                      ...product,
-                      tubs: [...product.tubs, newTub],
-                    }
-                  : product,
-              ),
-            }
-          : vendor,
-      ),
+    setVendors(
+      (current) =>
+        current.map(
+          (vendor) =>
+            vendor.id ===
+            selectedVendor.id
+              ? {
+                  ...vendor,
+                  products:
+                    vendor.products.map(
+                      (product) =>
+                        product.id ===
+                        selectedProduct.id
+                          ? {
+                              ...product,
+                              tubs: [
+                                ...product.tubs,
+                                newTub,
+                              ],
+                            }
+                          : product,
+                    ),
+                }
+              : vendor,
+        ),
     );
 
     if (manualNetWeight) {
-      const additionalNetWeight = weight * 0.95;
-
       setNetWeightOverride(
-        (Number(netWeightOverride || 0) + additionalNetWeight).toFixed(2),
+        (
+          Number(
+            netWeightOverride || 0,
+          ) +
+          weight * 0.95
+        ).toFixed(2),
       );
     }
 
-    setTubNumber("");
     setTubWeight("");
   }
 
-  function removeTub(tubId: string) {
-    if (!selectedVendor || !selectedProduct || workspaceFrozen) return;
+  function removeTub(
+    tubId: string,
+  ) {
+    if (
+      !selectedVendor ||
+      !selectedProduct ||
+      workspaceFrozen
+    ) {
+      return;
+    }
 
-    setVendors((current) =>
-      current.map((vendor) =>
-        vendor.id === selectedVendor.id
-          ? {
-              ...vendor,
-              products: vendor.products.map((product) =>
-                product.id === selectedProduct.id
-                  ? {
-                      ...product,
-                      tubs: product.tubs.filter(
-                        (tub) => tub.id !== tubId,
-                      ),
-                    }
-                  : product,
-              ),
-            }
-          : vendor,
-      ),
+    setVendors(
+      (current) =>
+        current.map(
+          (vendor) =>
+            vendor.id ===
+            selectedVendor.id
+              ? {
+                  ...vendor,
+                  products:
+                    vendor.products.map(
+                      (product) =>
+                        product.id ===
+                        selectedProduct.id
+                          ? {
+                              ...product,
+                              tubs:
+                                product.tubs.filter(
+                                  (tub) =>
+                                    tub.id !==
+                                    tubId,
+                                ),
+                            }
+                          : product,
+                    ),
+                }
+              : vendor,
+        ),
     );
   }
 
@@ -475,44 +661,67 @@ export default function DashboardShell({
       return;
     }
 
-    const value = Number(netWeightOverride);
+    const value =
+      Number(netWeightOverride);
 
-    if (!Number.isFinite(value) || value < 0) return;
+    if (
+      !Number.isFinite(value) ||
+      value < 0
+    ) {
+      return;
+    }
 
     setManualNetWeight(true);
   }
 
   function resetNetWeight() {
-    if (!canOverrideNetWeight || workspaceFrozen) return;
+    if (
+      !canOverrideNetWeight ||
+      workspaceFrozen
+    ) {
+      return;
+    }
 
     setManualNetWeight(false);
     setNetWeightOverride("");
   }
 
   function saveCurrentProduct() {
-    if (workspaceFrozen) return;
+    if (workspaceFrozen) {
+      return;
+    }
 
-    /*
-      Backend persistence will be connected here.
-
-      Current state is maintained locally so the dashboard
-      can be completed before Prisma persistence is connected.
-    */
+    // Prisma persistence will be connected here.
   }
 
   function completeVendor() {
-    if (!selectedVendor || purchaseCompleted) return;
+    if (
+      !selectedVendor ||
+      purchaseCompleted
+    ) {
+      return;
+    }
 
-    if (completedVendors.includes(selectedVendor.id)) return;
+    if (
+      completedVendors.includes(
+        selectedVendor.id,
+      )
+    ) {
+      return;
+    }
 
-    setCompletedVendors((current) => [
-      ...current,
-      selectedVendor.id,
-    ]);
+    setCompletedVendors(
+      (current) => [
+        ...current,
+        selectedVendor.id,
+      ],
+    );
   }
 
   function completePurchase() {
-    if (purchaseCompleted) return;
+    if (purchaseCompleted) {
+      return;
+    }
 
     setPurchaseCompleted(true);
   }
@@ -521,95 +730,110 @@ export default function DashboardShell({
     setPurchaseCompleted(false);
     setCompletedVendors([]);
 
-    setVendors(initialVendors);
+    setVendors(
+      initialVendors,
+    );
 
-    const firstVendor = initialVendors[0];
+    const firstVendor =
+      initialVendors[0];
 
-    setSelectedVendorId(firstVendor?.id ?? "");
-    setSelectedProductId(firstVendor?.products[0]?.id ?? "");
+    setSelectedVendorId(
+      firstVendor?.id ?? "",
+    );
+
+    setSelectedProductId(
+      firstVendor?.products[0]?.id ??
+        "",
+    );
 
     setManualNetWeight(false);
     setNetWeightOverride("");
-    setTubNumber("");
     setTubWeight("");
   }
 
   function openUserManagement() {
+    if (isNavigatingToUsers) {
+      return;
+    }
+
+    setIsNavigatingToUsers(true);
+
     router.push("/admin/users/");
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-white text-slate-900">
+    <main className="min-h-screen overflow-hidden bg-[#fffaf5] text-slate-900">
 
-      {/* ========================================================= */}
+      {/* ===================================================== */}
       {/* NAVBAR */}
-      {/* ========================================================= */}
+      {/* ===================================================== */}
 
-      <header className="sticky top-0 z-50 border-b border-orange-900 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-orange-100 bg-white/90 shadow-sm backdrop-blur-xl">
 
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-10">
 
-          {/* Brand */}
-
           <div className="min-w-0">
-            <h1 className="truncate text-xs font-extrabold tracking-wide text-amber-800 sm:text-sm lg:text-base">
+
+            <h1 className="truncate text-xs font-black tracking-wide text-amber-800 sm:text-sm lg:text-base">
               CHAITANYA SEA FOODS SYNDICATE
             </h1>
 
             <p className="hidden text-[10px] font-medium text-slate-500 sm:block">
               Business Management System
             </p>
-          </div>
 
-          {/* Desktop Navigation */}
+          </div>
 
           <nav className="hidden items-center gap-1 lg:flex">
 
             <a
               href="#purchase"
-              className="rounded-full bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+              className="rounded-full bg-orange-50 px-4 py-2 text-sm font-bold text-orange-700 shadow-sm transition hover:bg-orange-100"
             >
               Purchase
             </a>
 
             <a
               href="#sell"
-              className="rounded-full px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-700"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-700"
             >
               Sell
             </a>
 
             <a
               href="#expense"
-              className="rounded-full px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-700"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-700"
             >
               Expense
             </a>
 
             <a
               href="#reports"
-              className="rounded-full px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-700"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-700"
             >
               Reports
             </a>
 
             <a
               href="/api/auth/signout"
-              className="ml-2 rounded-full border border-orange-200 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:border-orange-400 hover:bg-orange-50"
+              className="ml-2 rounded-full border border-orange-200 px-4 py-2 text-sm font-bold text-orange-700 transition hover:border-orange-400 hover:bg-orange-50"
             >
               Logout
             </a>
 
           </nav>
 
-          {/* Mobile Menu */}
-
           <button
             type="button"
-            onClick={() => setShowMenu((value) => !value)}
-            className="rounded-lg border border-orange-200 p-2 text-orange-700 transition hover:bg-orange-50 lg:hidden"
+            onClick={() =>
+              setShowMenu(
+                (value) => !value,
+              )
+            }
+            className="rounded-xl border border-orange-200 bg-orange-50 p-2.5 text-orange-700 shadow-sm transition hover:bg-orange-100 lg:hidden"
             aria-label="Toggle navigation"
           >
+
             {showMenu ? (
               <svg
                 className="h-5 w-5"
@@ -639,22 +863,21 @@ export default function DashboardShell({
                 />
               </svg>
             )}
+
           </button>
 
         </div>
 
-        {/* Mobile Menu */}
-
         {showMenu && (
-          <div className="border-t border-orange-100 bg-white px-4 py-4 lg:hidden">
+          <div className="border-t border-orange-100 bg-white px-4 py-4 shadow-lg lg:hidden">
 
-            <div className="mb-3 rounded-xl bg-orange-50 px-4 py-3">
+            <div className="mb-3 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 px-4 py-3">
 
-              <p className="text-sm font-bold text-slate-900">
+              <p className="text-sm font-black text-slate-900">
                 {userName}
               </p>
 
-              <p className="mt-0.5 text-xs font-semibold text-orange-700">
+              <p className="mt-1 text-xs font-bold text-orange-700">
                 {role}
               </p>
 
@@ -662,41 +885,29 @@ export default function DashboardShell({
 
             <nav className="grid gap-1">
 
-              <a
-                href="#purchase"
-                onClick={() => setShowMenu(false)}
-                className="rounded-lg px-3 py-3 text-sm font-semibold text-orange-700 hover:bg-orange-50"
-              >
-                Purchase
-              </a>
-
-              <a
-                href="#sell"
-                onClick={() => setShowMenu(false)}
-                className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-orange-50"
-              >
-                Sell
-              </a>
-
-              <a
-                href="#expense"
-                onClick={() => setShowMenu(false)}
-                className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-orange-50"
-              >
-                Expense
-              </a>
-
-              <a
-                href="#reports"
-                onClick={() => setShowMenu(false)}
-                className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-orange-50"
-              >
-                Reports
-              </a>
+              {[
+                ["#purchase", "Purchase"],
+                ["#sell", "Sell"],
+                ["#expense", "Expense"],
+                ["#reports", "Reports"],
+              ].map(
+                ([href, label]) => (
+                  <a
+                    key={href}
+                    href={href}
+                    onClick={() =>
+                      setShowMenu(false)
+                    }
+                    className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-orange-50 hover:text-orange-700"
+                  >
+                    {label}
+                  </a>
+                ),
+              )}
 
               <a
                 href="/api/auth/signout"
-                className="mt-2 rounded-lg border border-orange-200 px-3 py-3 text-sm font-semibold text-orange-700 hover:bg-orange-50"
+                className="mt-2 rounded-xl border border-orange-200 px-3 py-3 text-sm font-bold text-orange-700 hover:bg-orange-50"
               >
                 Logout
               </a>
@@ -709,50 +920,54 @@ export default function DashboardShell({
       </header>
 
 
-      {/* ========================================================= */}
-      {/* DASHBOARD */}
-      {/* ========================================================= */}
+      {/* ===================================================== */}
+      {/* MAIN DASHBOARD */}
+      {/* ===================================================== */}
 
-      <section className="relative isolate">
+      <section
+        id="purchase"
+        className="relative"
+      >
 
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_15%,rgba(251,146,60,0.10),transparent_30%),radial-gradient(circle_at_90%_80%,rgba(148,163,184,0.10),transparent_35%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_10%,rgba(251,146,60,0.10),transparent_28%),radial-gradient(circle_at_90%_60%,rgba(253,186,116,0.10),transparent_30%)]" />
 
-        <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 lg:px-10 lg:py-6">
+        <div className="mx-auto max-w-7xl px-2 py-3 sm:px-6 lg:px-10 lg:py-6">
 
-          {/* ===================================================== */}
           {/* CURRENT PURCHASE */}
-          {/* ===================================================== */}
 
-          <section
-            id="purchase"
-            className="rounded-2xl border border-orange-600 bg-white shadow-sm"
-          >
+          <section className="overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-[0_12px_40px_rgba(120,53,15,0.08)]">
 
-            {/* Purchase Header */}
+            <div className="relative overflow-hidden border-b border-orange-100 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-400 px-4 py-4 text-white">
 
-            <div className="border-b border-orange-600 px-3 py-3 sm:px-4">
+              <div className="absolute right-[-30px] top-[-50px] h-32 w-32 rounded-full bg-white/10" />
 
-              <div className="flex items-center justify-between gap-3">
+              <div className="absolute bottom-[-50px] right-[20%] h-24 w-24 rounded-full bg-white/10" />
+
+              <div className="relative flex items-center justify-between gap-3">
 
                 <div>
 
-                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-orange-600">
-                    Current Purchase
-                  </p>
+                  <div className="mb-1 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.18em] backdrop-blur-sm">
 
-                  <h2 className="text-lg font-extrabold text-slate-950 sm:text-xl">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+
+                    Current Purchase
+
+                  </div>
+
+                  <h2 className="text-xl font-black tracking-tight">
                     Today&apos;s Purchase
                   </h2>
 
                 </div>
 
-                <div className="text-right">
+                <div className="rounded-2xl border border-white/20 bg-white/15 px-3 py-2 text-right backdrop-blur-sm">
 
-                  <p className="text-[10px] font-semibold text-slate-400">
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-orange-50">
                     Date
                   </p>
 
-                  <p className="text-xs font-bold text-slate-700">
+                  <p className="text-xs font-black">
                     {purchaseDate}
                   </p>
 
@@ -763,140 +978,151 @@ export default function DashboardShell({
             </div>
 
 
-            {/* Purchase Content */}
+            <div className="space-y-4 p-3 sm:p-5">
 
-            <div className="space-y-4 p-3 sm:p-4">
-
-              {/* ================================================= */}
               {/* CURRENT VENDOR */}
-              {/* ================================================= */}
 
-              <div>
+              <section>
 
                 <div className="mb-2 flex items-center justify-between">
 
                   <div>
 
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-500">
+                      Step 01
+                    </p>
+
+                    <p className="text-sm font-black text-slate-800">
                       Current Vendor
                     </p>
 
-                    <p className="text-xs font-semibold text-slate-600">
-                      Select vendor
-                    </p>
-
                   </div>
 
-                  {canCreate && !purchaseCompleted && (
-                    <button
-                      type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-lg font-bold text-orange-600 transition hover:bg-orange-100"
-                    >
-                      +
-                    </button>
-                  )}
+                  {canCreate &&
+                    !purchaseCompleted && (
+                      <button
+                        type="button"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-200 bg-orange-50 text-xl font-bold text-orange-600 shadow-sm transition hover:scale-105 hover:bg-orange-100"
+                      >
+                        +
+                      </button>
+                    )}
 
                 </div>
 
+                <div className="flex overflow-x-auto rounded-2xl border border-sky-200 bg-sky-50 p-1 shadow-inner">
 
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {vendors.map(
+                    (vendor) => {
 
-                  {vendors.map((vendor) => {
+                      const active =
+                        vendor.id ===
+                        selectedVendorId;
 
-                    const active =
-                      vendor.id === selectedVendorId;
+                      const completed =
+                        completedVendors.includes(
+                          vendor.id,
+                        );
 
-                    const completed =
-                      completedVendors.includes(vendor.id);
-
-                    return (
-                      <div
-                        key={vendor.id}
-                        className={`flex shrink-0 items-center rounded-full border transition ${
-                          active
-                            ? "border-orange-400 bg-orange-50"
-                            : "border-slate-400 bg-white"
-                        }`}
-                      >
-
-                        <button
-                          type="button"
-                          disabled={purchaseCompleted}
-                          onClick={() =>
-                            selectVendor(vendor.id)
-                          }
-                          className={`px-4 py-2 text-xs font-bold ${
+                      return (
+                        <div
+                          key={vendor.id}
+                          className={`mr-1 flex min-w-[74px] shrink-0 items-center overflow-hidden rounded-xl transition ${
                             active
-                              ? "text-orange-700"
-                              : "text-slate-600"
+                              ? "bg-white shadow-md ring-2 ring-orange-300"
+                              : "hover:bg-white/70"
                           }`}
                         >
-                          {vendor.name}
 
-                          {completed && (
-                            <span className="ml-1 text-green-600">
-                              ✓
-                            </span>
-                          )}
-                        </button>
-
-                        {!completed && !purchaseCompleted && (
                           <button
                             type="button"
-                            onClick={() =>
-                              cancelVendor(vendor.id)
+                            disabled={
+                              purchaseCompleted
                             }
-                            className="pr-3 text-sm font-bold text-slate-400 hover:text-red-500"
-                            aria-label={`Remove ${vendor.name}`}
+                            onClick={() =>
+                              selectVendor(
+                                vendor.id,
+                              )
+                            }
+                            className={`flex-1 px-4 py-3 text-xs font-black ${
+                              active
+                                ? "text-orange-700"
+                                : "text-slate-600"
+                            }`}
                           >
-                            ×
-                          </button>
-                        )}
+                            Vendor{" "}
+                            {vendor.name}
 
-                      </div>
-                    );
-                  })}
+                            {completed && (
+                              <span className="ml-1 text-green-600">
+                                ✓
+                              </span>
+                            )}
+
+                          </button>
+
+                          {!completed &&
+                            !purchaseCompleted && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  cancelVendor(
+                                    vendor.id,
+                                  )
+                                }
+                                className="px-2 text-sm font-black text-slate-300 transition hover:text-red-500"
+                              >
+                                ×
+                              </button>
+                            )}
+
+                        </div>
+                      );
+                    },
+                  )}
+
+                  {canCreate &&
+                    !purchaseCompleted && (
+                      <button
+                        type="button"
+                        className="flex min-w-[68px] shrink-0 items-center justify-center rounded-xl text-3xl font-light text-slate-500 transition hover:bg-white hover:text-orange-500"
+                      >
+                        +
+                      </button>
+                    )}
 
                 </div>
 
-              </div>
+              </section>
 
 
-              {/* ================================================= */}
               {/* PRODUCT LIST */}
-              {/* ================================================= */}
 
               {selectedVendor && (
-                <div>
+                <section>
 
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-2">
 
-                    <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-500">
+                      Step 02
+                    </p>
 
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 ">
+                    <div className="flex items-center justify-between">
+
+                      <p className="text-sm font-black text-slate-800">
                         Product List
                       </p>
 
-                      <p className="text-xs font-semibold text-slate-600">
+                      <span className="rounded-full bg-orange-50 px-3 py-1 text-[10px] font-bold text-orange-600">
+                        Vendor{" "}
                         {selectedVendor.name}
-                      </p>
+                      </span>
 
                     </div>
 
-                    {canCreate &&
-                      !workspaceFrozen && (
-                        <button
-                          type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-lg font-bold text-orange-600 transition hover:bg-orange-300"
-                        >
-                          +
-                        </button>
-                      )}
-
                   </div>
 
-
-                  <div className="flex gap-2 overflow-x-auto pb-1">
+                  <div className="flex overflow-x-auto rounded-2xl border border-pink-200 bg-pink-50 p-1 shadow-inner">
 
                     {selectedVendor.products.map(
                       (product) => {
@@ -908,24 +1134,26 @@ export default function DashboardShell({
                         return (
                           <div
                             key={product.id}
-                            className={`flex shrink-0 items-center rounded-full border transition ${
+                            className={`mr-1 flex min-w-[105px] shrink-0 items-center overflow-hidden rounded-xl transition ${
                               active
-                                ? "border-orange-400 bg-orange-50"
-                                : "border-slate-400 bg-white"
+                                ? "bg-white shadow-md ring-2 ring-pink-300"
+                                : "hover:bg-white/70"
                             }`}
                           >
 
                             <button
                               type="button"
-                              disabled={workspaceFrozen}
+                              disabled={
+                                workspaceFrozen
+                              }
                               onClick={() =>
                                 selectProduct(
                                   product.id,
                                 )
                               }
-                              className={`px-4 py-2 text-xs font-bold ${
+                              className={`flex-1 px-4 py-3 text-xs font-black ${
                                 active
-                                  ? "text-orange-700"
+                                  ? "text-pink-700"
                                   : "text-slate-600"
                               }`}
                             >
@@ -940,8 +1168,7 @@ export default function DashboardShell({
                                     product.id,
                                   )
                                 }
-                                className="pr-3 text-sm font-bold text-slate-400 hover:text-red-500"
-                                aria-label={`Remove ${product.name}`}
+                                className="px-2 text-sm font-black text-slate-300 hover:text-red-500"
                               >
                                 ×
                               </button>
@@ -952,83 +1179,93 @@ export default function DashboardShell({
                       },
                     )}
 
+                    {canCreate &&
+                      !workspaceFrozen && (
+                        <button
+                          type="button"
+                          className="flex min-w-[68px] shrink-0 items-center justify-center rounded-xl text-3xl font-light text-slate-500 hover:bg-white hover:text-orange-500"
+                        >
+                          +
+                        </button>
+                      )}
+
                   </div>
 
-                </div>
+                </section>
               )}
 
 
-              {/* ================================================= */}
               {/* ACTIVE PRODUCT */}
-              {/* ================================================= */}
 
               {selectedProduct && (
-                <div className="rounded-xl border border-slate-400 bg-slate-50 p-3">
+                <section className="rounded-3xl border border-orange-100 bg-gradient-to-br from-orange-50/70 via-white to-amber-50/60 p-4 shadow-sm">
 
-                  <div className="mb-3 flex items-center justify-between">
+                  <div className="mb-4 flex items-center justify-between">
 
                     <div>
 
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
-                        Active Product
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-500">
+                        Step 03
                       </p>
 
-                      <p className="text-sm font-extrabold text-slate-900">
-                        {selectedProduct.name}
+                      <p className="text-sm font-black text-slate-900">
+                        Active Product
                       </p>
 
                     </div>
 
                     {selectedVendorCompleted && (
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-[10px] font-bold text-green-700">
+                      <span className="rounded-full bg-green-100 px-3 py-1 text-[10px] font-black text-green-700">
                         Completed
                       </span>
                     )}
 
                   </div>
 
-
-                  {/* Product Name */}
-
                   <div className="grid gap-3 sm:grid-cols-3">
 
                     <div>
 
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">
                         Product Name
                       </label>
 
                       <input
-                        value={selectedProduct.name}
-                        disabled={workspaceFrozen}
+                        value={
+                          selectedProduct.name
+                        }
+                        disabled={
+                          workspaceFrozen
+                        }
                         onChange={(event) =>
                           updateProductName(
                             event.target.value,
                           )
                         }
-                        className="w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm font-semibold outline-none transition focus:border-orange-400"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold shadow-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                       />
 
                     </div>
 
-
-                    {/* Grade */}
-
                     <div>
 
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">
                         Grade
                       </label>
 
                       <select
-                        value={selectedProduct.grade}
-                        disabled={workspaceFrozen}
+                        value={
+                          selectedProduct.grade
+                        }
+                        disabled={
+                          workspaceFrozen
+                        }
                         onChange={(event) =>
                           updateGrade(
                             event.target.value,
                           )
                         }
-                        className="w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-orange-400"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold shadow-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                       >
                         {GRADE_OPTIONS.map(
                           (grade) => (
@@ -1044,12 +1281,9 @@ export default function DashboardShell({
 
                     </div>
 
-
-                    {/* Count Per Kg */}
-
                     <div>
 
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">
                         Count / kg
                       </label>
 
@@ -1057,319 +1291,472 @@ export default function DashboardShell({
                         value={
                           selectedProduct.countPerKg
                         }
-                        disabled={workspaceFrozen}
+                        disabled={
+                          workspaceFrozen
+                        }
                         onChange={(event) =>
                           updateCountPerKg(
                             event.target.value,
                           )
                         }
                         placeholder="Example 40"
-                        className="w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-orange-400"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold shadow-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                       />
 
                     </div>
 
                   </div>
 
-                </div>
+                </section>
               )}
 
 
-              {/* ================================================= */}
-              {/* TUBS */}
-              {/* ================================================= */}
+              {/* TUB MANAGEMENT */}
 
               {selectedProduct && (
-                <div>
+                <section>
 
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-3 flex items-center justify-between">
 
                     <div>
 
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        {selectedVendor?.name} →{" "}
-                        {selectedProduct.name}
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-500">
+                        Step 04
                       </p>
 
-                      <p className="text-sm font-extrabold text-slate-900">
-                        Product Tubs
+                      <p className="text-sm font-black text-slate-900">
+                        Tub Management
                       </p>
 
                     </div>
 
-                    <span className="rounded-full bg-orange-50 px-3 py-1 text-[10px] font-bold text-orange-700">
-                      {currentTubs.length} Tubs
-                    </span>
+                    <div className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5">
+
+                      <span className="text-[10px] font-black text-orange-700">
+                        {currentTubs.length} Tubs
+                      </span>
+
+                    </div>
 
                   </div>
 
 
-                  {/* Existing Tubs */}
+                  <div className="grid grid-cols-[132px_minmax(0,1fr)] gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
 
-                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {/* LEFT CONTROL PANEL */}
 
-                    {currentTubs.map((tub) => (
-                      <div
-                        key={tub.id}
-                        className="flex shrink-0 items-center rounded-lg border border-slate-400 bg-white"
-                      >
+                    <div className="space-y-3">
 
-                        <div className="px-3 py-2">
+                      <div className="rounded-3xl border-2 border-yellow-300 bg-gradient-to-b from-yellow-50 to-amber-50 p-3 shadow-[0_8px_25px_rgba(234,179,8,0.12)]">
 
-                          <p className="text-xs font-extrabold text-slate-800">
-                            {tub.number}
+                        <div className="mb-3">
+
+                          <div className="mb-1.5 flex items-center justify-between">
+
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-600">
+                              Tub Number
+                            </label>
+
+                            <span className="rounded-full bg-yellow-200 px-2 py-0.5 text-[9px] font-black text-yellow-800">
+                              AUTO
+                            </span>
+
+                          </div>
+
+                          <div className="flex h-11 items-center justify-center rounded-xl border-2 border-slate-300 bg-white text-sm font-black text-slate-700 shadow-inner">
+                            TN{" "}
+                            {nextTubNumber}
+                          </div>
+
+                        </div>
+
+
+                        <div>
+
+                          <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-600">
+                            Tub Weight
+                          </label>
+
+                          <div className="relative">
+
+                            <input
+                              value={tubWeight}
+                              disabled={
+                                workspaceFrozen
+                              }
+                              onChange={(
+                                event,
+                              ) =>
+                                setTubWeight(
+                                  event.target
+                                    .value,
+                                )
+                              }
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              className="h-11 w-full rounded-xl border-2 border-slate-300 bg-white px-3 pr-8 text-center text-sm font-black outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                            />
+
+                            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                              kg
+                            </span>
+
+                          </div>
+
+                        </div>
+
+
+                        <button
+                          type="button"
+                          disabled={
+                            workspaceFrozen
+                          }
+                          onClick={addTub}
+                          className="mt-3 w-full rounded-xl bg-red-500 px-3 py-2.5 text-xs font-black text-white shadow-md shadow-red-200 transition hover:bg-red-600 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Add Tub
+                        </button>
+
+                      </div>
+
+
+                      {/* WEIGHT SUMMARY */}
+
+                      <div className="rounded-3xl border-2 border-purple-300 bg-gradient-to-b from-purple-50 to-fuchsia-50 p-3 shadow-[0_8px_25px_rgba(168,85,247,0.10)]">
+
+                        <div className="mb-3">
+
+                          <p className="text-[9px] font-black uppercase tracking-wider text-purple-500">
+                            Total Weight
                           </p>
 
-                          <p className="text-[10px] font-medium text-slate-400">
-                            {tub.weight} kg
+                          <p className="mt-1 text-lg font-black text-purple-700">
+                            {totalWeight.toFixed(
+                              2,
+                            )}
+                            <span className="ml-1 text-[10px]">
+                              kg
+                            </span>
                           </p>
 
                         </div>
 
-                        {!workspaceFrozen && (
+                        <div className="border-t border-purple-200 pt-3">
+
+                          <p className="text-[9px] font-black uppercase tracking-wider text-purple-500">
+                            Net Weight
+                          </p>
+
+                          <p className="mt-1 text-lg font-black text-purple-700">
+                            {netWeight.toFixed(
+                              2,
+                            )}
+                            <span className="ml-1 text-[10px]">
+                              kg
+                            </span>
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* RIGHT TUB GRID */}
+
+                    <div className="min-w-0">
+
+                      <div className="mb-2 flex items-center justify-between">
+
+                        <div>
+
+                          <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                            Tub Records
+                          </p>
+
+                          <p className="text-xs font-bold text-slate-600">
+                            Vendor{" "}
+                            {selectedVendor?.name}{" "}
+                            →{" "}
+                            {selectedProduct.name}
+                          </p>
+
+                        </div>
+
+                        <span className="hidden rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black text-slate-500 sm:block">
+                          Auto numbered
+                        </span>
+
+                      </div>
+
+
+                      <div className="overflow-hidden rounded-2xl border-2 border-slate-800 bg-yellow-50 shadow-[0_8px_25px_rgba(15,23,42,0.08)]">
+
+                        <div className="grid grid-cols-3 border-b-2 border-slate-800 bg-slate-900 text-white">
+
+                          <div className="border-r border-slate-700 px-2 py-2 text-center text-[9px] font-black uppercase tracking-wider">
+                            Tub
+                          </div>
+
+                          <div className="border-r border-slate-700 px-2 py-2 text-center text-[9px] font-black uppercase tracking-wider">
+                            Weight
+                          </div>
+
+                          <div className="px-2 py-2 text-center text-[9px] font-black uppercase tracking-wider">
+                            Action
+                          </div>
+
+                        </div>
+
+
+                        {currentTubs.map(
+                          (tub) => (
+                            <div
+                              key={tub.id}
+                              className="grid grid-cols-3 border-b border-slate-800 last:border-b-0"
+                            >
+
+                              <div className="flex min-h-[58px] items-center justify-center border-r border-slate-800 bg-yellow-100 px-1">
+
+                                <span className="text-xs font-black text-slate-800">
+                                  TN{" "}
+                                  {tub.number}
+                                </span>
+
+                              </div>
+
+
+                              <div className="flex min-h-[58px] items-center justify-center border-r border-slate-800 bg-yellow-50 px-1">
+
+                                <span className="text-xs font-bold text-slate-700">
+                                  {tub.weight.toFixed(
+                                    2,
+                                  )}{" "}
+                                  kg
+                                </span>
+
+                              </div>
+
+
+                              <div className="flex min-h-[58px] items-center justify-center bg-yellow-50">
+
+                                {!workspaceFrozen ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeTub(
+                                        tub.id,
+                                      )
+                                    }
+                                    className="rounded-lg px-3 py-1.5 text-xs font-black text-red-500 transition hover:bg-red-50 hover:text-red-700"
+                                  >
+                                    Remove
+                                  </button>
+                                ) : (
+                                  <span className="text-[9px] font-bold text-slate-400">
+                                    Locked
+                                  </span>
+                                )}
+
+                              </div>
+
+                            </div>
+                          ),
+                        )}
+
+
+                        {currentTubs.length ===
+                          0 && (
+                          <div className="flex min-h-[180px] items-center justify-center bg-yellow-50 p-5 text-center">
+
+                            <div>
+
+                              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-yellow-200 text-lg">
+                                +
+                              </div>
+
+                              <p className="text-xs font-black text-slate-600">
+                                No tubs added
+                              </p>
+
+                              <p className="mt-1 text-[10px] text-slate-400">
+                                Add the first tub
+                                from the left panel
+                              </p>
+
+                            </div>
+
+                          </div>
+                        )}
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </section>
+              )}
+
+
+              {/* ADMIN NET WEIGHT */}
+
+              {canOverrideNetWeight &&
+                selectedProduct && (
+                  <section className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+
+                      <div className="flex-1">
+
+                        <div className="mb-1 flex items-center gap-2">
+
+                          <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[8px] font-black text-white">
+                            ADMIN
+                          </span>
+
+                          <label className="text-[10px] font-black uppercase tracking-wider text-orange-700">
+                            Net Weight Override
+                          </label>
+
+                        </div>
+
+                        <input
+                          value={
+                            netWeightOverride
+                          }
+                          disabled={
+                            workspaceFrozen
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            setNetWeightOverride(
+                              event.target
+                                .value,
+                            )
+                          }
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Enter net weight"
+                          className="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                        />
+
+                      </div>
+
+                      <div className="flex gap-2">
+
+                        <button
+                          type="button"
+                          disabled={
+                            workspaceFrozen
+                          }
+                          onClick={
+                            applyNetWeightOverride
+                          }
+                          className="rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-orange-600 disabled:opacity-40"
+                        >
+                          Override
+                        </button>
+
+                        {manualNetWeight && (
                           <button
                             type="button"
-                            onClick={() =>
-                              removeTub(tub.id)
+                            disabled={
+                              workspaceFrozen
                             }
-                            className="px-2 text-sm font-bold text-slate-400 hover:text-red-500"
-                            aria-label={`Remove ${tub.number}`}
+                            onClick={
+                              resetNetWeight
+                            }
+                            className="rounded-xl border border-orange-200 bg-white px-4 py-2.5 text-xs font-black text-orange-700 hover:bg-orange-50"
                           >
-                            ×
+                            Reset
                           </button>
                         )}
 
                       </div>
-                    ))}
-
-                  </div>
-
-
-                  {/* Add Tub */}
-
-                  {!workspaceFrozen && (
-                    <div className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
-
-                      <input
-                        value={tubNumber}
-                        onChange={(event) =>
-                          setTubNumber(
-                            event.target.value,
-                          )
-                        }
-                        placeholder="Tub No."
-                        className="min-w-0 rounded-lg border border-slate-400 px-3 py-2 text-xs font-semibold outline-none focus:border-orange-400"
-                      />
-
-                      <input
-                        value={tubWeight}
-                        onChange={(event) =>
-                          setTubWeight(
-                            event.target.value,
-                          )
-                        }
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Weight kg"
-                        className="min-w-0 rounded-lg border border-slate-400 px-3 py-2 text-xs font-semibold outline-none focus:border-orange-400"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={addTub}
-                        className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-orange-600"
-                      >
-                        Add
-                      </button>
-
-                    </div>
-                  )}
-
-                </div>
-              )}
-
-
-              {/* ================================================= */}
-              {/* WEIGHT SUMMARY */}
-              {/* ================================================= */}
-
-              {selectedProduct && (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-
-                  <div className="rounded-xl border border-slate-400 bg-white p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Gross Weight
-                    </p>
-
-                    <p className="mt-1 text-lg font-black text-slate-900">
-                      {totalWeight.toFixed(2)}
-                      <span className="ml-1 text-xs font-semibold text-slate-400">
-                        kg
-                      </span>
-                    </p>
-                  </div>
-
-
-                  <div className="rounded-xl border border-slate-400 bg-white p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Default Net
-                    </p>
-
-                    <p className="mt-1 text-lg font-black text-slate-900">
-                      {calculatedNetWeight.toFixed(2)}
-                      <span className="ml-1 text-xs font-semibold text-slate-400">
-                        kg
-                      </span>
-                    </p>
-                  </div>
-
-
-                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
-                      Net Weight
-                    </p>
-
-                    <p className="mt-1 text-lg font-black text-orange-700">
-                      {netWeight.toFixed(2)}
-                      <span className="ml-1 text-xs font-semibold text-orange-500">
-                        kg
-                      </span>
-                    </p>
-                  </div>
-
-
-                  <div className="rounded-xl border border-slate-400 bg-white p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Tubs
-                    </p>
-
-                    <p className="mt-1 text-lg font-black text-slate-900">
-                      {currentTubs.length}
-                    </p>
-                  </div>
-
-                </div>
-              )}
-
-
-              {/* ================================================= */}
-              {/* ADMIN NET OVERRIDE */}
-              {/* ================================================= */}
-
-              {canOverrideNetWeight && selectedProduct && (
-                <div className="rounded-xl border border-orange-200 bg-orange-100 p-3">
-
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-
-                    <div className="flex-1">
-
-                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-orange-700">
-                        Admin Net Weight Override
-                      </label>
-
-                      <input
-                        value={netWeightOverride}
-                        disabled={workspaceFrozen}
-                        onChange={(event) =>
-                          setNetWeightOverride(
-                            event.target.value,
-                          )
-                        }
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter net weight"
-                        className="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-orange-400"
-                      />
 
                     </div>
 
-                    <div className="flex gap-2">
+                    {manualNetWeight && (
+                      <div className="mt-3 rounded-xl bg-orange-100 px-3 py-2">
 
-                      <button
-                        type="button"
-                        disabled={workspaceFrozen}
-                        onClick={applyNetWeightOverride}
-                        className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Override
-                      </button>
+                        <p className="text-[10px] font-bold text-orange-700">
+                          Manual override active. Every
+                          newly added tub contributes
+                          95% of its gross weight to
+                          the overridden baseline.
+                        </p>
 
-                      {manualNetWeight && (
-                        <button
-                          type="button"
-                          disabled={workspaceFrozen}
-                          onClick={resetNetWeight}
-                          className="rounded-lg border border-orange-200 bg-white px-4 py-2 text-xs font-bold text-orange-700 hover:bg-orange-50"
-                        >
-                          Reset
-                        </button>
-                      )}
+                      </div>
+                    )}
 
-                    </div>
-
-                  </div>
-
-                  {manualNetWeight && (
-                    <p className="mt-2 text-[10px] font-semibold text-orange-700">
-                      Manual net weight is active. New tubs will add
-                      95% of their gross weight to the overridden
-                      baseline.
-                    </p>
-                  )}
-
-                </div>
-              )}
+                  </section>
+                )}
 
 
-              {/* ================================================= */}
               {/* SAVE */}
-              {/* ================================================= */}
 
               {selectedProduct && (
                 <button
                   type="button"
-                  disabled={workspaceFrozen}
-                  onClick={saveCurrentProduct}
-                  className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={
+                    workspaceFrozen
+                  }
+                  onClick={
+                    saveCurrentProduct
+                  }
+                  className="w-full rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Save Purchase Details
                 </button>
               )}
 
 
-              {/* ================================================= */}
               {/* COMPLETE VENDOR */}
-              {/* ================================================= */}
 
               {selectedVendor && (
-                <div className="rounded-xl border border-slate-400 bg-white p-3">
+                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
 
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                     <div>
 
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Vendor Completion
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">
+                        Vendor Status
                       </p>
 
-                      <p className="mt-1 text-sm font-bold text-slate-800">
+                      <p className="mt-1 text-sm font-black text-slate-800">
+                        Vendor{" "}
                         {selectedVendor.name}
                       </p>
 
                     </div>
 
                     {selectedVendorCompleted ? (
-                      <span className="rounded-full bg-green-100 px-4 py-2 text-xs font-bold text-green-700">
+                      <span className="inline-flex w-fit items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-black text-green-700">
+
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white">
+                          ✓
+                        </span>
+
                         Completed
+
                       </span>
                     ) : (
                       <button
                         type="button"
-                        disabled={purchaseCompleted}
-                        onClick={completeVendor}
-                        className="rounded-xl bg-red-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={
+                          purchaseCompleted
+                        }
+                        onClick={
+                          completeVendor
+                        }
+                        className="rounded-xl bg-red-500 px-5 py-3 text-xs font-black text-white shadow-md shadow-red-100 transition hover:bg-red-600 disabled:opacity-40"
                       >
                         Complete Vendor
                       </button>
@@ -1377,7 +1764,7 @@ export default function DashboardShell({
 
                   </div>
 
-                </div>
+                </section>
               )}
 
             </div>
@@ -1385,39 +1772,50 @@ export default function DashboardShell({
           </section>
 
 
-          {/* ===================================================== */}
           {/* COMPLETE PURCHASE */}
-          {/* ===================================================== */}
 
-          <section className="mt-4 rounded-2xl border border-orange-400 bg-white p-3 shadow-sm sm:p-4">
+          <section className="mt-4 overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-sm">
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
 
               <div>
 
-                <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
-                  Purchase Status
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-500">
+                  Final Step
                 </p>
 
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="mt-1 text-lg font-black text-slate-900">
                   {purchaseCompleted
                     ? "Purchase Completed"
                     : "Complete Today's Purchase"}
                 </h3>
 
+                <p className="mt-1 text-xs text-slate-500">
+                  Complete the purchase after all
+                  vendor entries are finished.
+                </p>
+
               </div>
 
               {purchaseCompleted ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
 
-                  <span className="rounded-full bg-green-100 px-4 py-2 text-xs font-bold text-green-700">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-black text-green-700">
+
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white">
+                      ✓
+                    </span>
+
                     Completed
+
                   </span>
 
                   <button
                     type="button"
-                    onClick={createNewPurchase}
-                    className="rounded-xl bg-orange-500 px-4 py-2 text-xs font-bold text-white hover:bg-orange-600"
+                    onClick={
+                      createNewPurchase
+                    }
+                    className="rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-orange-600"
                   >
                     Create New Purchase
                   </button>
@@ -1426,8 +1824,10 @@ export default function DashboardShell({
               ) : (
                 <button
                   type="button"
-                  onClick={completePurchase}
-                  className="rounded-xl bg-red-500 px-5 py-3 text-xs font-bold text-white transition hover:bg-red-600"
+                  onClick={
+                    completePurchase
+                  }
+                  className="rounded-xl bg-red-500 px-6 py-3 text-xs font-black text-white shadow-lg shadow-red-100 transition hover:bg-red-600"
                 >
                   Complete Purchase
                 </button>
@@ -1438,93 +1838,177 @@ export default function DashboardShell({
           </section>
 
 
-          {/* ===================================================== */}
           {/* SELL */}
-          {/* ===================================================== */}
 
           <section
             id="sell"
-            className="mt-4 rounded-2xl border border-slate-400 bg-white p-4 shadow-sm"
+            className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
           >
 
-            <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
-              Sell
-            </p>
+            <div className="flex items-center gap-3">
 
-            <h2 className="mt-1 text-base font-extrabold text-slate-900">
-              Sales Management
-            </h2>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                →
+              </div>
 
-            <p className="mt-1 text-xs text-slate-500">
+              <div>
+
+                <p className="text-[9px] font-black uppercase tracking-wider text-orange-500">
+                  Sales
+                </p>
+
+                <h2 className="text-base font-black text-slate-900">
+                  Sales Management
+                </h2>
+
+              </div>
+
+            </div>
+
+            <p className="mt-3 text-xs leading-5 text-slate-500">
               Sales management will be connected here.
             </p>
 
           </section>
 
 
-          {/* ===================================================== */}
           {/* EXPENSE */}
-          {/* ===================================================== */}
 
           <section
             id="expense"
-            className="mt-4 rounded-2xl border border-slate-400 bg-white p-4 shadow-sm"
+            className="mt-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
           >
 
-            <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
-              Expense
-            </p>
+            <div className="flex items-center gap-3">
 
-            <h2 className="mt-1 text-base font-extrabold text-slate-900">
-              Expense Management
-            </h2>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                ₹
+              </div>
 
-            <p className="mt-1 text-xs text-slate-400">
-              Regular expenses and transport expenses will be
-              connected here.
+              <div>
+
+                <p className="text-[9px] font-black uppercase tracking-wider text-orange-500">
+                  Finance
+                </p>
+
+                <h2 className="text-base font-black text-slate-900">
+                  Expense Management
+                </h2>
+
+              </div>
+
+            </div>
+
+            <p className="mt-3 text-xs leading-5 text-slate-500">
+              Regular expenses and transport expenses
+              will be connected here.
             </p>
 
           </section>
 
 
-          {/* ===================================================== */}
           {/* REPORTS */}
-          {/* ===================================================== */}
 
           <section
             id="reports"
-            className="mt-4 rounded-2xl border border-slate-400 bg-white p-4 shadow-sm"
+            className="mt-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
           >
 
-            <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600">
-              Reports
-            </p>
+            <div className="flex items-center gap-3">
 
-            <h2 className="mt-1 text-base font-extrabold text-slate-900">
-              Business Reports
-            </h2>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                ↗
+              </div>
 
-            <p className="mt-1 text-xs text-slate-500">
-              Purchase sales expense and supply chain reports
-              will appear here.
+              <div>
+
+                <p className="text-[9px] font-black uppercase tracking-wider text-orange-500">
+                  Analytics
+                </p>
+
+                <h2 className="text-base font-black text-slate-900">
+                  Business Reports
+                </h2>
+
+              </div>
+
+            </div>
+
+            <p className="mt-3 text-xs leading-5 text-slate-500">
+              Purchase sales expense and supply chain
+              reports will appear here.
             </p>
 
           </section>
 
 
-          {/* ===================================================== */}
           {/* MANAGE USERS */}
-          {/* ===================================================== */}
 
           {role === "ADMIN" && (
-            <section className="mt-5">
+            <section className="mt-4">
 
               <button
                 type="button"
-                onClick={openUserManagement}
-                className="w-full rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-700 transition hover:border-orange-400 hover:bg-orange-100"
+                onClick={
+                  openUserManagement
+                }
+                disabled={
+                  isNavigatingToUsers
+                }
+                className="group flex w-full items-center justify-between rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 px-5 py-4 text-left shadow-sm transition hover:border-orange-300 hover:shadow-md disabled:cursor-wait disabled:opacity-80"
               >
-                Manage Users
+
+                <div>
+
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-500">
+                    Administration
+                  </p>
+
+                  <p className="mt-1 text-sm font-black text-orange-800">
+                    Manage Users
+                  </p>
+
+                  <p className="mt-0.5 text-[10px] text-orange-600">
+                    Manage employee portal access
+                  </p>
+
+                </div>
+
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white shadow-md">
+
+                  {isNavigatingToUsers ? (
+                    <svg
+                      className="h-5 w-5 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                        className="stroke-white/30"
+                        strokeWidth="3"
+                      />
+
+                      <path
+                        d="M21 12a9 9 0 0 0-9-9"
+                        className="stroke-white"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+
+                    </svg>
+                  ) : (
+                    <span className="text-lg font-black transition group-hover:translate-x-1">
+                      →
+                    </span>
+                  )}
+
+                </div>
+
               </button>
 
             </section>
@@ -1535,19 +2019,19 @@ export default function DashboardShell({
       </section>
 
 
-      {/* ========================================================= */}
+      {/* ===================================================== */}
       {/* FOOTER */}
-      {/* ========================================================= */}
+      {/* ===================================================== */}
 
       <footer className="mt-6 border-t border-slate-200 bg-slate-950 text-white">
 
-        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl px-5 py-9 sm:px-8 lg:px-10">
 
-          <div className="grid gap-7 md:grid-cols-2 md:items-center">
+          <div className="grid gap-8 md:grid-cols-2 md:items-center">
 
             <div>
 
-              <h3 className="font-bold">
+              <h3 className="font-black tracking-wide">
                 CHAITANYA SEA FOODS SYNDICATE
               </h3>
 
@@ -1561,7 +2045,7 @@ export default function DashboardShell({
 
             <div className="md:text-right">
 
-              <p className="text-sm font-semibold text-orange-400">
+              <p className="text-sm font-black text-orange-400">
                 Contact
               </p>
 
