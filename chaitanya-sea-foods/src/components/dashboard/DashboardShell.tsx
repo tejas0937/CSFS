@@ -1,7 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+
+import {
+  createVendor,
+  getActiveVendors,
+} from "@/app/actions/vendors";
+import {
+  createProduct,
+  deleteProduct,
+  getProductsByVendor,
+  updateProduct,
+} from "@/app/actions/products";
 
 type Role = "ADMIN" | "MANAGER" | "VIEWER";
 
@@ -41,156 +52,6 @@ const GRADE_OPTIONS = [
   "QD",
 ];
 
-const initialVendors: Vendor[] = [
-  {
-    id: "vendor-a",
-    name: "A",
-    products: [
-      {
-        id: "a-prawns",
-        name: "Prawns",
-        grade: "Premium",
-        countPerKg: "40",
-        tubs: [
-          {
-            id: "a-prawns-t0",
-            number: 0,
-            weight: 12,
-          },
-          {
-            id: "a-prawns-t1",
-            number: 1,
-            weight: 15,
-          },
-          {
-            id: "a-prawns-t2",
-            number: 2,
-            weight: 18,
-          },
-          {
-            id: "a-prawns-t3",
-            number: 3,
-            weight: 16,
-          },
-          {
-            id: "a-prawns-t4",
-            number: 4,
-            weight: 20,
-          },
-        ],
-      },
-      {
-        id: "a-fish",
-        name: "Fish",
-        grade: "A",
-        countPerKg: "12",
-        tubs: [
-          {
-            id: "a-fish-t0",
-            number: 0,
-            weight: 20,
-          },
-          {
-            id: "a-fish-t1",
-            number: 1,
-            weight: 18,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "vendor-b",
-    name: "B",
-    products: [
-      {
-        id: "b-crab",
-        name: "Crab",
-        grade: "B",
-        countPerKg: "8",
-        tubs: [
-          {
-            id: "b-crab-t0",
-            number: 0,
-            weight: 16,
-          },
-          {
-            id: "b-crab-t1",
-            number: 1,
-            weight: 19,
-          },
-        ],
-      },
-      {
-        id: "b-prawns",
-        name: "Prawns",
-        grade: "Premium",
-        countPerKg: "35",
-        tubs: [
-          {
-            id: "b-prawns-t0",
-            number: 0,
-            weight: 22,
-          },
-          {
-            id: "b-prawns-t1",
-            number: 1,
-            weight: 18,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "vendor-c",
-    name: "C",
-    products: [
-      {
-        id: "c-fish",
-        name: "Fish",
-        grade: "C",
-        countPerKg: "15",
-        tubs: [
-          {
-            id: "c-fish-t0",
-            number: 0,
-            weight: 24,
-          },
-          {
-            id: "c-fish-t1",
-            number: 1,
-            weight: 20,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "vendor-d",
-    name: "D",
-    products: [
-      {
-        id: "d-prawns",
-        name: "Prawns",
-        grade: "QD",
-        countPerKg: "50",
-        tubs: [
-          {
-            id: "d-prawns-t0",
-            number: 0,
-            weight: 15,
-          },
-          {
-            id: "d-prawns-t1",
-            number: 1,
-            weight: 14,
-          },
-        ],
-      },
-    ],
-  },
-];
-
 export default function DashboardShell({
   userName,
   role,
@@ -199,15 +60,37 @@ export default function DashboardShell({
   const router = useRouter();
 
   const [vendors, setVendors] =
-    useState<Vendor[]>(initialVendors);
+    useState<Vendor[]>([]);
 
   const [selectedVendorId, setSelectedVendorId] =
-    useState(initialVendors[0]?.id ?? "");
+    useState("");
 
   const [selectedProductId, setSelectedProductId] =
-    useState(
-      initialVendors[0]?.products[0]?.id ?? "",
-    );
+    useState("");
+
+  const [isLoadingVendors, setIsLoadingVendors] =
+    useState(true);
+
+  const [showAddVendorModal, setShowAddVendorModal] =
+    useState(false);
+
+  const [isAddingVendor, setIsAddingVendor] =
+    useState(false);
+
+  const [newVendorName, setNewVendorName] =
+    useState("");
+
+  const [newVendorContact, setNewVendorContact] =
+    useState("");
+
+  const [newVendorPhone, setNewVendorPhone] =
+    useState("");
+
+  const [newVendorEmail, setNewVendorEmail] =
+    useState("");
+
+  const [newVendorError, setNewVendorError] =
+    useState("");
 
   const [tubWeight, setTubWeight] =
     useState("");
@@ -230,9 +113,112 @@ export default function DashboardShell({
   const [isNavigatingToUsers, setIsNavigatingToUsers] =
     useState(false);
 
+  const [showAddProductModal, setShowAddProductModal] =
+    useState(false);
+
+  const [isAddingProduct, setIsAddingProduct] =
+    useState(false);
+
+  const [newProductName, setNewProductName] =
+    useState("");
+
+  const [newProductGrade, setNewProductGrade] =
+    useState(GRADE_OPTIONS[0]);
+
+  const [newProductCountPerKg, setNewProductCountPerKg] =
+    useState("");
+
+  const [newProductError, setNewProductError] =
+    useState("");
+
+  const [isSavingProduct, setIsSavingProduct] =
+    useState(false);
+
+  const [productMessage, setProductMessage] =
+    useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadVendors() {
+      setIsLoadingVendors(true);
+
+      try {
+        const result = await getActiveVendors();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!result.success || result.vendors.length === 0) {
+          setVendors([]);
+          setSelectedVendorId("");
+          setSelectedProductId("");
+          return;
+        }
+
+        const databaseVendors: Vendor[] =
+          await Promise.all(
+            result.vendors.map(async (vendor) => {
+              const productsResult =
+                await getProductsByVendor(vendor.id);
+
+              const products: Product[] =
+                productsResult.success
+                  ? productsResult.products.map((product) => ({
+                      id: product.id,
+                      name: product.name,
+                      grade: product.grade,
+                      countPerKg: product.countPerKg,
+                      tubs: [],
+                    }))
+                  : [];
+
+              return {
+                id: vendor.id,
+                name: vendor.name,
+                products,
+              };
+            }),
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setVendors(databaseVendors);
+
+        const firstVendor = databaseVendors[0];
+
+        setSelectedVendorId(firstVendor?.id ?? "");
+        setSelectedProductId(firstVendor?.products[0]?.id ?? "");
+      } catch (error) {
+        console.error("Load dashboard data error:", error);
+
+        if (!cancelled) {
+          setVendors([]);
+          setSelectedVendorId("");
+          setSelectedProductId("");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingVendors(false);
+        }
+      }
+    }
+
+    loadVendors();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const canCreate =
     role === "ADMIN" ||
     role === "MANAGER";
+
+  const canEditProducts = role === "ADMIN";
 
   const canOverrideNetWeight =
     role === "ADMIN";
@@ -255,8 +241,10 @@ export default function DashboardShell({
     [selectedVendor, selectedProductId],
   );
 
-  const currentTubs =
-    selectedProduct?.tubs ?? [];
+  const currentTubs = useMemo(
+    () => selectedProduct?.tubs ?? [],
+    [selectedProduct],
+  );
 
   const selectedVendorCompleted =
     selectedVendor
@@ -288,7 +276,7 @@ export default function DashboardShell({
 
   const nextTubNumber = useMemo(() => {
     if (currentTubs.length === 0) {
-      return 0;
+      return 1;
     }
 
     return (
@@ -299,6 +287,155 @@ export default function DashboardShell({
       ) + 1
     );
   }, [currentTubs]);
+
+  async function handleAddVendor() {
+    setNewVendorError("");
+
+    if (!newVendorName.trim()) {
+      setNewVendorError(
+        "Vendor name is required.",
+      );
+      return;
+    }
+
+    if (!newVendorPhone.trim()) {
+      setNewVendorError(
+        "Phone number is required.",
+      );
+      return;
+    }
+
+    setIsAddingVendor(true);
+
+    try {
+      const result = await createVendor({
+        name: newVendorName.trim(),
+        contactPerson:
+          newVendorContact.trim(),
+        phone: newVendorPhone.trim(),
+        alternatePhone: "",
+        email: newVendorEmail.trim(),
+        address: "",
+        notes: "",
+      });
+
+      if (!result.success) {
+        setNewVendorError(result.error);
+        return;
+      }
+
+      const newVendor: Vendor = {
+        id: result.vendor.id,
+        name: result.vendor.name,
+        products: [],
+      };
+
+      setVendors((currentVendors) => [
+        ...currentVendors,
+        newVendor,
+      ]);
+
+      setSelectedVendorId(newVendor.id);
+      setSelectedProductId("");
+
+      setNewVendorName("");
+      setNewVendorContact("");
+      setNewVendorPhone("");
+      setNewVendorEmail("");
+      setNewVendorError("");
+
+      setShowAddVendorModal(false);
+    } catch (error) {
+      console.error(
+        "Add vendor error:",
+        error,
+      );
+
+      setNewVendorError(
+        "Something went wrong while adding the vendor.",
+      );
+    } finally {
+      setIsAddingVendor(false);
+    }
+  }
+
+  function openAddProductModal() {
+    if (!canCreate || workspaceFrozen) {
+      return;
+    }
+
+    setNewProductName("");
+    setNewProductGrade(GRADE_OPTIONS[0]);
+    setNewProductCountPerKg("");
+    setNewProductError("");
+    setShowAddProductModal(true);
+  }
+
+  async function handleAddProduct() {
+    setNewProductError("");
+    setProductMessage("");
+
+    if (!selectedVendor) {
+      setNewProductError("Please select a vendor first.");
+      return;
+    }
+
+    if (!newProductName.trim()) {
+      setNewProductError("Product name is required.");
+      return;
+    }
+
+    if (!newProductCountPerKg.trim()) {
+      setNewProductError("Count per kg is required.");
+      return;
+    }
+
+    setIsAddingProduct(true);
+
+    try {
+      const result = await createProduct({
+        vendorId: selectedVendor.id,
+        name: newProductName.trim(),
+        grade: newProductGrade,
+        countPerKg: newProductCountPerKg.trim(),
+      });
+
+      if (!result.success) {
+        setNewProductError(result.error);
+        return;
+      }
+
+      const newProduct: Product = {
+        id: result.product.id,
+        name: result.product.name,
+        grade: result.product.grade,
+        countPerKg: result.product.countPerKg,
+        tubs: [],
+      };
+
+      setVendors((current) =>
+        current.map((vendor) =>
+          vendor.id === selectedVendor.id
+            ? {
+                ...vendor,
+                products: [...vendor.products, newProduct],
+              }
+            : vendor,
+        ),
+      );
+
+      setSelectedProductId(newProduct.id);
+      setShowAddProductModal(false);
+      setProductMessage("Product created successfully.");
+    } catch (error) {
+      console.error("Add product error:", error);
+      setNewProductError(
+        "Something went wrong while adding the product.",
+      );
+    } finally {
+      setIsAddingProduct(false);
+    }
+  }
 
   function selectVendor(
     vendorId: string,
@@ -389,52 +526,43 @@ export default function DashboardShell({
     setNetWeightOverride("");
   }
 
-  function cancelProduct(
+  async function cancelProduct(
     productId: string,
   ) {
     if (
       !selectedVendor ||
-      workspaceFrozen
+      workspaceFrozen ||
+      role !== "ADMIN"
     ) {
       return;
     }
 
-    const remainingProducts =
-      selectedVendor.products.filter(
-        (product) =>
-          product.id !== productId,
-      );
+    setProductMessage("");
 
-    if (
-      remainingProducts.length ===
-      0
-    ) {
+    const result = await deleteProduct(productId);
+
+    if (!result.success) {
+      setProductMessage(result.error);
       return;
     }
 
-    setVendors(
-      (current) =>
-        current.map(
-          (vendor) =>
-            vendor.id ===
-            selectedVendor.id
-              ? {
-                  ...vendor,
-                  products:
-                    remainingProducts,
-                }
-              : vendor,
-        ),
+    const remainingProducts = selectedVendor.products.filter(
+      (product) => product.id !== productId,
     );
 
-    if (
-      selectedProductId ===
-      productId
-    ) {
-      setSelectedProductId(
-        remainingProducts[0].id,
-      );
+    setVendors((current) =>
+      current.map((vendor) =>
+        vendor.id === selectedVendor.id
+          ? { ...vendor, products: remainingProducts }
+          : vendor,
+      ),
+    );
+
+    if (selectedProductId === productId) {
+      setSelectedProductId(remainingProducts[0]?.id ?? "");
     }
+
+    setProductMessage("Product deleted successfully.");
   }
 
   function updateProductName(
@@ -686,12 +814,62 @@ export default function DashboardShell({
     setNetWeightOverride("");
   }
 
-  function saveCurrentProduct() {
-    if (workspaceFrozen) {
+  async function saveCurrentProduct() {
+    if (
+      workspaceFrozen ||
+      !selectedVendor ||
+      !selectedProduct ||
+      !canEditProducts
+    ) {
       return;
     }
 
-    // Prisma persistence will be connected here.
+    setIsSavingProduct(true);
+    setProductMessage("");
+
+    try {
+      const result = await updateProduct(
+        selectedProduct.id,
+        {
+          vendorId: selectedVendor.id,
+          name: selectedProduct.name.trim(),
+          grade: selectedProduct.grade.trim(),
+          countPerKg: selectedProduct.countPerKg.trim(),
+        },
+      );
+
+      if (!result.success) {
+        setProductMessage(result.error);
+        return;
+      }
+
+      setVendors((current) =>
+        current.map((vendor) =>
+          vendor.id === selectedVendor.id
+            ? {
+                ...vendor,
+                products: vendor.products.map((product) =>
+                  product.id === result.product.id
+                    ? {
+                        ...product,
+                        name: result.product.name,
+                        grade: result.product.grade,
+                        countPerKg: result.product.countPerKg,
+                      }
+                    : product,
+                ),
+              }
+            : vendor,
+        ),
+      );
+
+      setProductMessage("Product details saved successfully.");
+    } catch (error) {
+      console.error("Save product error:", error);
+      setProductMessage("Failed to save product details.");
+    } finally {
+      setIsSavingProduct(false);
+    }
   }
 
   function completeVendor() {
@@ -730,25 +908,15 @@ export default function DashboardShell({
     setPurchaseCompleted(false);
     setCompletedVendors([]);
 
-    setVendors(
-      initialVendors,
-    );
+    const firstVendor = vendors[0];
 
-    const firstVendor =
-      initialVendors[0];
-
-    setSelectedVendorId(
-      firstVendor?.id ?? "",
-    );
-
-    setSelectedProductId(
-      firstVendor?.products[0]?.id ??
-        "",
-    );
+    setSelectedVendorId(firstVendor?.id ?? "");
+    setSelectedProductId(firstVendor?.products[0]?.id ?? "");
 
     setManualNetWeight(false);
     setNetWeightOverride("");
     setTubWeight("");
+    setProductMessage("");
   }
 
   function openUserManagement() {
@@ -814,12 +982,15 @@ export default function DashboardShell({
               Reports
             </a>
 
-            <a
-              href="/api/auth/signout"
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/api/auth/signout");
+              }}
               className="ml-2 rounded-full border border-orange-200 px-4 py-2 text-sm font-bold text-orange-700 transition hover:border-orange-400 hover:bg-orange-50"
             >
               Logout
-            </a>
+            </button>
 
           </nav>
 
@@ -905,12 +1076,15 @@ export default function DashboardShell({
                 ),
               )}
 
-              <a
-                href="/api/auth/signout"
-                className="mt-2 rounded-xl border border-orange-200 px-3 py-3 text-sm font-bold text-orange-700 hover:bg-orange-50"
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/api/auth/signout");
+                }}
+                className="mt-2 w-full rounded-xl border border-orange-200 px-3 py-3 text-left text-sm font-bold text-orange-700 hover:bg-orange-50"
               >
                 Logout
-              </a>
+              </button>
 
             </nav>
 
@@ -1002,6 +1176,10 @@ export default function DashboardShell({
                     !purchaseCompleted && (
                       <button
                         type="button"
+                        onClick={() => {
+                          setNewVendorError("");
+                          setShowAddVendorModal(true);
+                        }}
                         className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-200 bg-orange-50 text-xl font-bold text-orange-600 shadow-sm transition hover:scale-105 hover:bg-orange-100"
                       >
                         +
@@ -1010,7 +1188,15 @@ export default function DashboardShell({
 
                 </div>
 
-                <div className="flex overflow-x-auto rounded-2xl border border-sky-200 bg-sky-50 p-1 shadow-inner">
+                {isLoadingVendors ? (
+                  <div className="flex min-h-[58px] items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 p-4 shadow-inner">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-orange-200 border-t-orange-500" />
+                      Loading vendors...
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex overflow-x-auto rounded-2xl border border-sky-200 bg-sky-50 p-1 shadow-inner">
 
                   {vendors.map(
                     (vendor) => {
@@ -1085,20 +1271,32 @@ export default function DashboardShell({
                     !purchaseCompleted && (
                       <button
                         type="button"
+                        onClick={() => {
+                          setNewVendorError("");
+                          setShowAddVendorModal(true);
+                        }}
                         className="flex min-w-[68px] shrink-0 items-center justify-center rounded-xl text-3xl font-light text-slate-500 transition hover:bg-white hover:text-orange-500"
                       >
                         +
                       </button>
                     )}
 
-                </div>
+                  </div>
+                )}
 
               </section>
 
 
               {/* PRODUCT LIST */}
 
-              {selectedVendor && (
+              {isLoadingVendors ? (
+                <section className="rounded-2xl border border-pink-100 bg-pink-50/50 p-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-pink-200 border-t-pink-500" />
+                    Loading products...
+                  </div>
+                </section>
+              ) : selectedVendor ? (
                 <section>
 
                   <div className="mb-2">
@@ -1160,7 +1358,7 @@ export default function DashboardShell({
                               {product.name}
                             </button>
 
-                            {!workspaceFrozen && (
+                            {!workspaceFrozen && role === "ADMIN" && (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1183,6 +1381,7 @@ export default function DashboardShell({
                       !workspaceFrozen && (
                         <button
                           type="button"
+                          onClick={openAddProductModal}
                           className="flex min-w-[68px] shrink-0 items-center justify-center rounded-xl text-3xl font-light text-slate-500 hover:bg-white hover:text-orange-500"
                         >
                           +
@@ -1191,6 +1390,27 @@ export default function DashboardShell({
 
                   </div>
 
+                </section>
+              ) : null}
+
+
+              {!isLoadingVendors && vendors.length === 0 && (
+                <section className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+                  <p className="text-xs font-black text-slate-600">
+                    No active vendors found.
+                  </p>
+                  {canCreate && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewVendorError("");
+                        setShowAddVendorModal(true);
+                      }}
+                      className="mt-3 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-orange-600"
+                    >
+                      Add First Vendor
+                    </button>
+                  )}
                 </section>
               )}
 
@@ -1235,7 +1455,7 @@ export default function DashboardShell({
                           selectedProduct.name
                         }
                         disabled={
-                          workspaceFrozen
+                          workspaceFrozen || !canEditProducts
                         }
                         onChange={(event) =>
                           updateProductName(
@@ -1258,7 +1478,7 @@ export default function DashboardShell({
                           selectedProduct.grade
                         }
                         disabled={
-                          workspaceFrozen
+                          workspaceFrozen || !canEditProducts
                         }
                         onChange={(event) =>
                           updateGrade(
@@ -1292,7 +1512,7 @@ export default function DashboardShell({
                           selectedProduct.countPerKg
                         }
                         disabled={
-                          workspaceFrozen
+                          workspaceFrozen || !canEditProducts
                         }
                         onChange={(event) =>
                           updateCountPerKg(
@@ -1701,19 +1921,25 @@ export default function DashboardShell({
 
               {/* SAVE */}
 
-              {selectedProduct && (
+              {selectedProduct && canEditProducts && (
                 <button
                   type="button"
                   disabled={
-                    workspaceFrozen
+                    workspaceFrozen || isSavingProduct
                   }
                   onClick={
                     saveCurrentProduct
                   }
                   className="w-full rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Save Purchase Details
+                  {isSavingProduct ? "Saving Product..." : "Save Product Details"}
                 </button>
+              )}
+
+              {productMessage && (
+                <div className="rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700">
+                  {productMessage}
+                </div>
               )}
 
 
@@ -2018,6 +2244,256 @@ export default function DashboardShell({
 
       </section>
 
+
+
+      {/* ===================================================== */}
+      {/* ADD PRODUCT MODAL */}
+      {/* ===================================================== */}
+
+      {showAddProductModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-2xl">
+            <div className="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-5 text-white">
+              <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-50">
+                Add Product
+              </p>
+              <h2 className="mt-1 text-xl font-black">
+                New Product
+              </h2>
+              <p className="mt-1 text-xs text-orange-50">
+                Vendor {selectedVendor?.name ?? ""}
+              </p>
+            </div>
+
+            <div className="space-y-4 p-5">
+              <div>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  Product Name
+                </label>
+                <input
+                  autoFocus
+                  value={newProductName}
+                  onChange={(event) =>
+                    setNewProductName(event.target.value)
+                  }
+                  placeholder="Example Prawns"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Grade
+                  </label>
+                  <select
+                    value={newProductGrade}
+                    onChange={(event) =>
+                      setNewProductGrade(event.target.value)
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  >
+                    {GRADE_OPTIONS.map((grade) => (
+                      <option key={grade} value={grade}>
+                        {grade}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Count / kg
+                  </label>
+                  <input
+                    value={newProductCountPerKg}
+                    onChange={(event) =>
+                      setNewProductCountPerKg(event.target.value)
+                    }
+                    placeholder="Example 40"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  />
+                </div>
+              </div>
+
+              {newProductError && (
+                <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600">
+                  {newProductError}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isAddingProduct}
+                  onClick={() => setShowAddProductModal(false)}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-black text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isAddingProduct}
+                  onClick={handleAddProduct}
+                  className="flex-1 rounded-xl bg-orange-500 px-4 py-3 text-xs font-black text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-wait disabled:opacity-50"
+                >
+                  {isAddingProduct ? "Adding..." : "Add Product"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================== */}
+      {/* ADD VENDOR MODAL */}
+      {/* ===================================================== */}
+
+      {showAddVendorModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Add Vendor
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Add a new vendor to the current purchase.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAddingVendor) {
+                    setShowAddVendorModal(false);
+                    setNewVendorError("");
+                  }
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-5 px-6 py-6">
+
+              {newVendorError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                  {newVendorError}
+                </div>
+              )}
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Vendor Name *
+                </label>
+
+                <input
+                  type="text"
+                  value={newVendorName}
+                  onChange={(event) =>
+                    setNewVendorName(event.target.value)
+                  }
+                  placeholder="Enter vendor name"
+                  disabled={isAddingVendor}
+                  autoFocus
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:bg-slate-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Contact Person
+                </label>
+
+                <input
+                  type="text"
+                  value={newVendorContact}
+                  onChange={(event) =>
+                    setNewVendorContact(event.target.value)
+                  }
+                  placeholder="Enter contact person"
+                  disabled={isAddingVendor}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:bg-slate-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Phone *
+                </label>
+
+                <input
+                  type="tel"
+                  value={newVendorPhone}
+                  onChange={(event) =>
+                    setNewVendorPhone(event.target.value)
+                  }
+                  placeholder="Enter phone number"
+                  disabled={isAddingVendor}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:bg-slate-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  value={newVendorEmail}
+                  onChange={(event) =>
+                    setNewVendorEmail(event.target.value)
+                  }
+                  placeholder="vendor@example.com"
+                  disabled={isAddingVendor}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:bg-slate-50"
+                />
+              </div>
+
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAddingVendor) {
+                    setShowAddVendorModal(false);
+                    setNewVendorError("");
+                  }
+                }}
+                disabled={isAddingVendor}
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAddVendor}
+                disabled={isAddingVendor}
+                className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isAddingVendor ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Adding...
+                  </span>
+                ) : (
+                  "Add Vendor"
+                )}
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ===================================================== */}
       {/* FOOTER */}
