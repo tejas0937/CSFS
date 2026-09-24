@@ -15,6 +15,8 @@ model User {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  managedVendors Vendor[]
 }
 
 enum Role {
@@ -24,47 +26,96 @@ enum Role {
 }
 
 model Vendor {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   name           String
-  contactPerson  String?
+  shipName       String?
   phone          String
   alternatePhone String?
-  email          String?
+  location       String?
   address        String?
   notes          String?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  products Product[]
+  isActive       Boolean @default(true)
+
+  managedById String?
+  managedBy   User?   @relation(fields: [managedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  Product[]
+  purchases Purchase[]
+
+  @@index([managedById])
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  vendorId    String
+  id       String @id @default(cuid())
+  vendorId String
 
-  name        String
-  grade       String
-  countPerKg  String
+  name       String
+  grade      String
+  countPerKg String
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  vendor      Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  tubs        Tub[]
+  vendor       Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  tubs         Tub[]
+  purchaseTubs PurchaseTub[]
 
   @@index([vendorId])
 }
 
 model Tub {
-  id          String   @id @default(cuid())
-  productId   String
+  id        String @id @default(cuid())
+  productId String
 
-  number      Int
-  weight      Float
+  number Int
+  weight Float
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
+}
+
+model Purchase {
+  id           String   @id @default(cuid())
+  purchaseDate DateTime @default(now())
+
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id])
+
+  grossWeight         Float   @default(0)
+  netWeight           Float   @default(0)
+  netWeightOverridden Boolean @default(false)
+
+  vendorCompleted Boolean @default(false)
+  completed       Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tubs PurchaseTub[]
+
+  @@index([vendorId])
+  @@index([purchaseDate])
+}
+
+model PurchaseTub {
+  id         String @id @default(cuid())
+  purchaseId String
+  productId  String
+
+  number Int
+  weight Float
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([purchaseId])
   @@index([productId])
 }

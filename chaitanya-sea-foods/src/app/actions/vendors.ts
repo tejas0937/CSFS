@@ -17,10 +17,10 @@ const vendorSchema = z.object({
     .min(2, "Vendor name must be at least 2 characters")
     .max(100, "Vendor name is too long"),
 
-  contactPerson: z
+  shipName: z
     .string()
     .trim()
-    .max(100, "Contact person name is too long")
+    .max(100, "Ship name is too long")
     .optional()
     .or(z.literal("")),
 
@@ -39,11 +39,10 @@ const vendorSchema = z.object({
     .optional()
     .or(z.literal("")),
 
-  email: z
+  location: z
     .string()
     .trim()
-    .email("Invalid email address")
-    .max(150, "Email is too long")
+    .max(250, "Location is too long")
     .optional()
     .or(z.literal("")),
 
@@ -69,17 +68,25 @@ type ErrorResponse = {
   error: string;
 };
 
+type ManagedBy = {
+  id: string;
+  name: string;
+  role: string;
+};
+
 type VendorResponse = {
   success: true;
   vendor: {
     id: string;
     name: string;
-    contactPerson: string | null;
+    shipName: string | null;
     phone: string;
     alternatePhone: string | null;
-    email: string | null;
+    location: string | null;
     address: string | null;
     notes: string | null;
+    managedById: string | null;
+    managedBy: ManagedBy | null;
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
@@ -101,10 +108,10 @@ type DeleteResponse = {
 function normalizeVendorData(data: VendorInput) {
   return {
     name: data.name,
-    contactPerson: data.contactPerson || null,
+    shipName: data.shipName || null,
     phone: data.phone,
     alternatePhone: data.alternatePhone || null,
-    email: data.email || null,
+    location: data.location || null,
     address: data.address || null,
     notes: data.notes || null,
   };
@@ -144,7 +151,21 @@ export async function createVendor(
 
   try {
     const vendor = await prisma.vendor.create({
-      data: normalizeVendorData(parsed.data),
+      data: {
+        ...normalizeVendorData(parsed.data),
+
+        // Automatically assign the logged-in user
+        managedById: session.user.id,
+      },
+      include: {
+        managedBy: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
     });
 
     return {
@@ -152,12 +173,20 @@ export async function createVendor(
       vendor: {
         id: vendor.id,
         name: vendor.name,
-        contactPerson: vendor.contactPerson,
+        shipName: vendor.shipName,
         phone: vendor.phone,
         alternatePhone: vendor.alternatePhone,
-        email: vendor.email,
+        location: vendor.location,
         address: vendor.address,
         notes: vendor.notes,
+        managedById: vendor.managedById,
+        managedBy: vendor.managedBy
+          ? {
+              id: vendor.managedBy.id,
+              name: vendor.managedBy.name,
+              role: vendor.managedBy.role,
+            }
+          : null,
         isActive: vendor.isActive,
         createdAt: vendor.createdAt.toISOString(),
         updatedAt: vendor.updatedAt.toISOString(),
@@ -227,7 +256,21 @@ export async function updateVendor(
 
     const vendor = await prisma.vendor.update({
       where: { id },
+
+      // IMPORTANT:
+      // managedById is intentionally NOT updated here.
+      // The original manager remains attached to the vendor.
       data: normalizeVendorData(parsed.data),
+
+      include: {
+        managedBy: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
     });
 
     return {
@@ -235,12 +278,20 @@ export async function updateVendor(
       vendor: {
         id: vendor.id,
         name: vendor.name,
-        contactPerson: vendor.contactPerson,
+        shipName: vendor.shipName,
         phone: vendor.phone,
         alternatePhone: vendor.alternatePhone,
-        email: vendor.email,
+        location: vendor.location,
         address: vendor.address,
         notes: vendor.notes,
+        managedById: vendor.managedById,
+        managedBy: vendor.managedBy
+          ? {
+              id: vendor.managedBy.id,
+              name: vendor.managedBy.name,
+              role: vendor.managedBy.role,
+            }
+          : null,
         isActive: vendor.isActive,
         createdAt: vendor.createdAt.toISOString(),
         updatedAt: vendor.updatedAt.toISOString(),
@@ -381,18 +432,24 @@ export async function deleteVendor(
   }
 }
 
+/* =========================================================
+   GET ACTIVE VENDORS
+========================================================= */
+
 type VendorListResponse =
   | {
       success: true;
       vendors: {
         id: string;
         name: string;
-        contactPerson: string | null;
+        shipName: string | null;
         phone: string;
         alternatePhone: string | null;
-        email: string | null;
+        location: string | null;
         address: string | null;
         notes: string | null;
+        managedById: string | null;
+        managedBy: ManagedBy | null;
         isActive: boolean;
         createdAt: string;
         updatedAt: string;
@@ -415,22 +472,44 @@ export async function getActiveVendors(): Promise<VendorListResponse> {
       where: {
         isActive: true,
       },
+
       orderBy: {
         createdAt: "asc",
+      },
+
+      include: {
+        managedBy: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+          },
+        },
       },
     });
 
     return {
       success: true,
+
       vendors: vendors.map((vendor) => ({
         id: vendor.id,
         name: vendor.name,
-        contactPerson: vendor.contactPerson,
+        shipName: vendor.shipName,
         phone: vendor.phone,
         alternatePhone: vendor.alternatePhone,
-        email: vendor.email,
+        location: vendor.location,
         address: vendor.address,
         notes: vendor.notes,
+        managedById: vendor.managedById,
+
+        managedBy: vendor.managedBy
+          ? {
+              id: vendor.managedBy.id,
+              name: vendor.managedBy.name,
+              role: vendor.managedBy.role,
+            }
+          : null,
+
         isActive: vendor.isActive,
         createdAt: vendor.createdAt.toISOString(),
         updatedAt: vendor.updatedAt.toISOString(),
