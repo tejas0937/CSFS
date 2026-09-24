@@ -8,15 +8,23 @@ import {
   updateVendor,
 } from "@/app/actions/vendors";
 
+type ManagedBy = {
+  id: string;
+  name: string;
+  role: string;
+};
+
 type Vendor = {
   id: string;
   name: string;
-  contactPerson: string | null;
+  shipName: string | null;
   phone: string;
   alternatePhone: string | null;
-  email: string | null;
+  location: string | null;
   address: string | null;
   notes: string | null;
+  managedById: string | null;
+  managedBy: ManagedBy | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -29,20 +37,20 @@ type VendorManagementProps = {
 
 type VendorForm = {
   name: string;
-  contactPerson: string;
+  shipName: string;
   phone: string;
   alternatePhone: string;
-  email: string;
+  location: string;
   address: string;
   notes: string;
 };
 
 const emptyForm: VendorForm = {
   name: "",
-  contactPerson: "",
+  shipName: "",
   phone: "",
   alternatePhone: "",
-  email: "",
+  location: "",
   address: "",
   notes: "",
 };
@@ -82,9 +90,10 @@ export default function VendorManagement({
       const matchesSearch =
         !query ||
         vendor.name.toLowerCase().includes(query) ||
-        vendor.contactPerson?.toLowerCase().includes(query) ||
+        vendor.shipName?.toLowerCase().includes(query) ||
         vendor.phone.toLowerCase().includes(query) ||
-        vendor.email?.toLowerCase().includes(query);
+        vendor.location?.toLowerCase().includes(query) ||
+        vendor.managedBy?.name.toLowerCase().includes(query);
 
       const matchesStatus =
         statusFilter === "ALL" ||
@@ -111,10 +120,10 @@ export default function VendorManagement({
 
     setForm({
       name: vendor.name,
-      contactPerson: vendor.contactPerson ?? "",
+      shipName: vendor.shipName ?? "",
       phone: vendor.phone,
       alternatePhone: vendor.alternatePhone ?? "",
-      email: vendor.email ?? "",
+      location: vendor.location ?? "",
       address: vendor.address ?? "",
       notes: vendor.notes ?? "",
     });
@@ -165,8 +174,8 @@ export default function VendorManagement({
                     ...vendor,
                     ...result.vendor,
                   }
-                : vendor
-            )
+                : vendor,
+            ),
           );
 
           setSuccess("Vendor updated successfully.");
@@ -211,8 +220,8 @@ export default function VendorManagement({
                   ...item,
                   isActive: result.vendor!.isActive,
                 }
-              : item
-          )
+              : item,
+          ),
         );
       }
 
@@ -247,7 +256,7 @@ export default function VendorManagement({
       }
 
       setVendors((previous) =>
-        previous.filter((vendor) => vendor.id !== vendorToDelete.id)
+        previous.filter((vendor) => vendor.id !== vendorToDelete.id),
       );
 
       setIsDeleteOpen(false);
@@ -258,6 +267,21 @@ export default function VendorManagement({
         setSuccess("");
       }, 2500);
     });
+  }
+
+  function formatManagedBy(managedBy: ManagedBy | null) {
+    if (!managedBy) {
+      return "—";
+    }
+
+    const roleLabel =
+      managedBy.role === "ADMIN"
+        ? "Admin"
+        : managedBy.role === "MANAGER"
+          ? "Manager"
+          : managedBy.role;
+
+    return `${roleLabel} - ${managedBy.name}`;
   }
 
   return (
@@ -342,7 +366,7 @@ export default function VendorManagement({
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search vendors, contacts, phone or email..."
+              placeholder="Search vendors, ships, phone, location or manager..."
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
@@ -369,7 +393,7 @@ export default function VendorManagement({
       {/* Vendor Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
+          <table className="w-full min-w-[1100px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -377,7 +401,7 @@ export default function VendorManagement({
                 </th>
 
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Contact
+                  Ship Name
                 </th>
 
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -385,7 +409,11 @@ export default function VendorManagement({
                 </th>
 
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Email
+                  Location
+                </th>
+
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Managed By
                 </th>
 
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -404,7 +432,7 @@ export default function VendorManagement({
               {filteredVendors.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={canEdit || canDelete ? 6 : 5}
+                    colSpan={canEdit || canDelete ? 7 : 6}
                     className="px-6 py-16 text-center"
                   >
                     <div className="mx-auto flex max-w-sm flex-col items-center">
@@ -430,6 +458,7 @@ export default function VendorManagement({
                     key={vendor.id}
                     className="border-b border-slate-100 transition hover:bg-slate-50/70 last:border-0 dark:border-slate-800 dark:hover:bg-slate-800/30"
                   >
+                    {/* Vendor */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 font-bold text-cyan-600 dark:text-cyan-400">
@@ -450,10 +479,12 @@ export default function VendorManagement({
                       </div>
                     </td>
 
+                    {/* Ship Name */}
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                      {vendor.contactPerson || "—"}
+                      {vendor.shipName || "—"}
                     </td>
 
+                    {/* Phone */}
                     <td className="px-6 py-4">
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
                         {vendor.phone}
@@ -466,10 +497,35 @@ export default function VendorManagement({
                       )}
                     </td>
 
+                    {/* Location */}
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                      {vendor.email || "—"}
+                      {vendor.location || "—"}
                     </td>
 
+                    {/* Managed By */}
+                    <td className="px-6 py-4">
+                      {vendor.managedBy ? (
+                        <div>
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            {vendor.managedBy.name}
+                          </p>
+
+                          <p className="mt-0.5 text-xs text-slate-400">
+                            {vendor.managedBy.role === "ADMIN"
+                              ? "Admin"
+                              : vendor.managedBy.role === "MANAGER"
+                                ? "Manager"
+                                : vendor.managedBy.role}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-400">
+                          —
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Status */}
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
@@ -490,6 +546,7 @@ export default function VendorManagement({
                       </span>
                     </td>
 
+                    {/* Actions */}
                     {(canEdit || canDelete) && (
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
@@ -594,19 +651,21 @@ export default function VendorManagement({
                 />
 
                 <FormField
-                  label="Contact Person"
-                  value={form.contactPerson}
+                  label="Ship Name"
+                  value={form.shipName}
                   onChange={(value) =>
-                    updateField("contactPerson", value)
+                    updateField("shipName", value)
                   }
-                  placeholder="e.g. Rajesh Patil"
+                  placeholder="e.g. Sea Queen"
                 />
 
                 <FormField
                   label="Phone"
                   required
                   value={form.phone}
-                  onChange={(value) => updateField("phone", value)}
+                  onChange={(value) =>
+                    updateField("phone", value)
+                  }
                   placeholder="e.g. 9876543210"
                 />
 
@@ -620,18 +679,39 @@ export default function VendorManagement({
                 />
 
                 <FormField
-                  label="Email"
-                  type="email"
-                  value={form.email}
-                  onChange={(value) => updateField("email", value)}
-                  placeholder="vendor@example.com"
+                  label="Location"
+                  value={form.location}
+                  onChange={(value) =>
+                    updateField("location", value)
+                  }
+                  placeholder="e.g. Ratnagiri"
                 />
               </div>
+
+              {/* Managed By */}
+              {editingVendor?.managedBy && (
+                <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 dark:border-cyan-900/40 dark:bg-cyan-950/20">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-cyan-600 dark:text-cyan-400">
+                    Managed By
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    {formatManagedBy(editingVendor.managedBy)}
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Manager is assigned automatically when the vendor is
+                    created.
+                  </p>
+                </div>
+              )}
 
               <FormField
                 label="Address"
                 value={form.address}
-                onChange={(value) => updateField("address", value)}
+                onChange={(value) =>
+                  updateField("address", value)
+                }
                 placeholder="Vendor address"
                 textarea
               />
@@ -639,7 +719,9 @@ export default function VendorManagement({
               <FormField
                 label="Notes"
                 value={form.notes}
-                onChange={(value) => updateField("notes", value)}
+                onChange={(value) =>
+                  updateField("notes", value)
+                }
                 placeholder="Additional notes about this vendor..."
                 textarea
               />

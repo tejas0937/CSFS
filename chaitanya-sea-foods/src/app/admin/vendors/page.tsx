@@ -13,17 +13,36 @@ export default async function AdminVendorsPage() {
     orderBy: {
       createdAt: "desc",
     },
+    include: {
+      managedBy: {
+        select: {
+          id: true,
+          name: true,
+          role: true,
+        },
+      },
+    },
   });
 
   const serializedVendors = vendors.map((vendor) => ({
     id: vendor.id,
     name: vendor.name,
-    contactPerson: vendor.contactPerson,
+    shipName: vendor.shipName,
     phone: vendor.phone,
     alternatePhone: vendor.alternatePhone,
-    email: vendor.email,
+    location: vendor.location,
     address: vendor.address,
     notes: vendor.notes,
+    managedById: vendor.managedById,
+
+    managedBy: vendor.managedBy
+      ? {
+          id: vendor.managedBy.id,
+          name: vendor.managedBy.name,
+          role: vendor.managedBy.role,
+        }
+      : null,
+
     isActive: vendor.isActive,
     createdAt: vendor.createdAt.toISOString(),
     updatedAt: vendor.updatedAt.toISOString(),
